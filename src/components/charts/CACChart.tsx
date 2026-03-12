@@ -53,7 +53,7 @@ export function CACChart() {
         <CardTitle className="text-lg">CAC Trend vs New Customers</CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="h-[350px]" role="img" aria-label="Dual-axis chart showing CAC trend and new customer count">
+        <div className="h-[250px] sm:h-[350px]" role="img" aria-label="Dual-axis chart showing CAC trend and new customer count">
           <ResponsiveContainer width="100%" height="100%">
             <ComposedChart data={data} margin={{ top: 5, right: 20, bottom: 5, left: 10 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />

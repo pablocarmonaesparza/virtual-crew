@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import {
   Select,
   SelectContent,
@@ -8,13 +9,29 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useDashboardStore } from "@/stores/dashboard-store";
+import { SlidersHorizontal, ChevronDown, ChevronUp } from "lucide-react";
 import type { Channel, ProductCategory, CustomerType, AdsPlatform } from "@/types";
 
 export function FilterBar() {
   const { filters, setFilter } = useDashboardStore();
+  const [isOpen, setIsOpen] = useState(false);
 
   return (
-    <div className="flex flex-wrap items-center gap-3 rounded-lg border bg-white p-4">
+    <div className="rounded-lg border bg-white">
+      {/* Mobile toggle */}
+      <button
+        className="flex w-full items-center justify-between p-4 md:hidden"
+        onClick={() => setIsOpen(!isOpen)}
+        aria-expanded={isOpen}
+      >
+        <span className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+          <SlidersHorizontal className="h-4 w-4" />
+          Filters
+        </span>
+        {isOpen ? <ChevronUp className="h-4 w-4 text-muted-foreground" /> : <ChevronDown className="h-4 w-4 text-muted-foreground" />}
+      </button>
+
+      <div className={`flex flex-wrap items-center gap-3 p-4 pt-0 md:pt-4 ${isOpen ? "flex" : "hidden md:flex"}`}>
       <div className="flex items-center gap-2">
         <label className="text-sm font-medium text-muted-foreground whitespace-nowrap">
           Client
@@ -129,6 +146,7 @@ export function FilterBar() {
             <SelectItem value="amazon_ads">Amazon Ads</SelectItem>
           </SelectContent>
         </Select>
+      </div>
       </div>
     </div>
   );

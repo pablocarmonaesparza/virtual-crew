@@ -50,7 +50,7 @@ export function AdSpendChart() {
         <CardTitle className="text-lg">Ad Spend — Actual vs Budget</CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="h-[350px]" role="img" aria-label="Ad spend grouped bar chart showing actual vs budget">
+        <div className="h-[250px] sm:h-[350px]" role="img" aria-label="Ad spend grouped bar chart showing actual vs budget">
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={data} margin={{ top: 5, right: 20, bottom: 5, left: 10 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />

@@ -40,7 +40,7 @@ export function CACTable() {
       </CardHeader>
       <CardContent>
         <div className="overflow-x-auto">
-          <table className="w-full text-sm" role="table">
+          <table className="w-full min-w-[600px] text-sm" role="table">
             <thead>
               <tr className="border-b">
                 <th className="pb-3 text-left">

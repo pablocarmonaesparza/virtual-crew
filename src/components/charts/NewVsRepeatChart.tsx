@@ -62,7 +62,7 @@ export function NewVsRepeatChart() {
         <CardTitle className="text-lg">New vs Returning Customers</CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="h-[350px]" role="img" aria-label="Area chart showing new vs returning customers over time">
+        <div className="h-[250px] sm:h-[350px]" role="img" aria-label="Area chart showing new vs returning customers over time">
           <ResponsiveContainer width="100%" height="100%">
             <AreaChart data={data} margin={{ top: 5, right: 20, bottom: 5, left: 10 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />

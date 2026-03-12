@@ -17,14 +17,14 @@ export function Header() {
       <div className="flex h-16 items-center justify-between px-6">
         <div className="flex items-center gap-4">
           <div className="flex items-center gap-3">
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-exl-blue">
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-exl-blue">
               <span className="text-sm font-bold text-white font-heading">EXL</span>
             </div>
-            <div>
-              <h1 className="text-lg font-semibold font-heading text-exl-blue">
+            <div className="min-w-0">
+              <h1 className="text-base sm:text-lg font-semibold font-heading text-exl-blue truncate">
                 S&OP Dashboard
               </h1>
-              <p className="text-xs text-muted-foreground">Agua de Madre</p>
+              <p className="text-xs text-muted-foreground hidden sm:block">Agua de Madre</p>
             </div>
           </div>
         </div>
@@ -37,13 +37,13 @@ export function Header() {
           >
             {isRunning ? (
               <>
-                <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
-                Running...
+                <RefreshCw className="h-4 w-4 animate-spin sm:mr-2" />
+                <span className="hidden sm:inline">Running...</span>
               </>
             ) : (
               <>
-                <Play className="mr-2 h-4 w-4" />
-                Run Analysis
+                <Play className="h-4 w-4 sm:mr-2" />
+                <span className="hidden sm:inline">Run Analysis</span>
               </>
             )}
           </Button>

@@ -80,7 +80,7 @@ export function ChatPanel() {
   };
 
   return (
-    <Card className="fixed bottom-4 right-4 z-50 w-[400px] max-h-[600px] shadow-2xl flex flex-col">
+    <Card className="fixed bottom-4 right-2 left-2 sm:left-auto sm:right-4 z-50 w-auto sm:w-[400px] max-h-[85vh] sm:max-h-[600px] shadow-2xl flex flex-col">
       <CardHeader className="flex flex-row items-center justify-between p-4 pb-2 border-b">
         <div className="flex items-center gap-2">
           <div className="flex h-7 w-7 items-center justify-center rounded-full bg-exl-blue">
@@ -131,7 +131,7 @@ export function ChatPanel() {
                 </div>
               )}
               <div
-                className={`rounded-lg px-3 py-2 text-sm max-w-[280px] ${
+                className={`rounded-lg px-3 py-2 text-sm max-w-[70%] sm:max-w-[280px] ${
                   msg.role === "user"
                     ? "bg-exl-blue text-white"
                     : "bg-slate-100 text-foreground"
