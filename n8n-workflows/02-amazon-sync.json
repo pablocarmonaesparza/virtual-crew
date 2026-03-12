@@ -1,0 +1,136 @@
+{
+  "name": "ADM - Amazon Seller Central Data Sync",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [{ "field": "hours", "hoursInterval": 24, "triggerAtHour": 4 }]
+        }
+      },
+      "id": "cron-trigger",
+      "name": "Daily 4AM UTC",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "position": [240, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.amazon.com/auth/o2/token",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            { "name": "grant_type", "value": "refresh_token" },
+            { "name": "refresh_token", "value": "={{$credentials.amazonRefreshToken}}" },
+            { "name": "client_id", "value": "={{$credentials.amazonClientId}}" },
+            { "name": "client_secret", "value": "={{$credentials.amazonClientSecret}}" }
+          ]
+        }
+      },
+      "id": "auth-token",
+      "name": "Get Access Token",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [460, 300]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "https://sellingpartnerapi-eu.amazon.com/orders/v0/orders",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "x-amz-access-token", "value": "={{$node['Get Access Token'].json.access_token}}" }
+          ]
+        },
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            { "name": "MarketplaceIds", "value": "={{$credentials.amazonMarketplaceId}}" },
+            { "name": "CreatedAfter", "value": "={{$now.minus({days: 2}).toISO()}}" }
+          ]
+        }
+      },
+      "id": "fetch-orders",
+      "name": "Fetch Amazon Orders",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [700, 200]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "https://sellingpartnerapi-eu.amazon.com/fba/inventory/v1/summaries",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "x-amz-access-token", "value": "={{$node['Get Access Token'].json.access_token}}" }
+          ]
+        },
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            { "name": "marketplaceIds", "value": "={{$credentials.amazonMarketplaceId}}" },
+            { "name": "granularityType", "value": "Marketplace" },
+            { "name": "granularityId", "value": "={{$credentials.amazonMarketplaceId}}" }
+          ]
+        }
+      },
+      "id": "fetch-inventory",
+      "name": "Fetch FBA Inventory",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [700, 400]
+    },
+    {
+      "parameters": {
+        "jsCode": "const orders = $input.all().map(item => item.json);\nconst transformed = [];\n\nfor (const order of orders) {\n  const orderItems = order.OrderItems || [];\n  for (const item of orderItems) {\n    transformed.push({\n      order_id: order.AmazonOrderId,\n      order_date: order.PurchaseDate?.split('T')[0],\n      sku_id: item.SellerSKU,\n      asin: item.ASIN,\n      quantity: item.QuantityOrdered || 1,\n      revenue: parseFloat(item.ItemPrice?.Amount || '0'),\n      marketplace: 'UK',\n      synced_at: new Date().toISOString()\n    });\n  }\n}\n\nreturn transformed.map(t => ({ json: t }));"
+      },
+      "id": "transform-orders",
+      "name": "Transform Orders",
+      "type": "n8n-nodes-base.code",
+      "position": [920, 200]
+    },
+    {
+      "parameters": {
+        "jsCode": "const inventoryItems = $input.all().map(item => item.json);\nconst today = new Date().toISOString().split('T')[0];\n\nconst transformed = inventoryItems.map(item => ({\n  sku_id: item.sellerSku,\n  asin: item.asin,\n  fulfillable_quantity: item.inventoryDetails?.fulfillableQuantity || 0,\n  inbound_quantity: item.inventoryDetails?.inboundWorkingQuantity || 0,\n  snapshot_date: today\n}));\n\nreturn transformed.map(t => ({ json: t }));"
+      },
+      "id": "transform-inventory",
+      "name": "Transform Inventory",
+      "type": "n8n-nodes-base.code",
+      "position": [920, 400]
+    },
+    {
+      "parameters": {
+        "operation": "upsert",
+        "tableId": "amazon_orders",
+        "conflictColumns": "order_id",
+        "dataMode": "autoMap"
+      },
+      "id": "upsert-orders",
+      "name": "Upsert Orders to Supabase",
+      "type": "n8n-nodes-base.supabase",
+      "position": [1140, 200]
+    },
+    {
+      "parameters": {
+        "operation": "upsert",
+        "tableId": "amazon_inventory",
+        "conflictColumns": "sku_id,asin,snapshot_date",
+        "dataMode": "autoMap"
+      },
+      "id": "upsert-inventory",
+      "name": "Upsert Inventory to Supabase",
+      "type": "n8n-nodes-base.supabase",
+      "position": [1140, 400]
+    }
+  ],
+  "connections": {
+    "Daily 4AM UTC": { "main": [[{ "node": "Get Access Token", "type": "main", "index": 0 }]] },
+    "Get Access Token": { "main": [[{ "node": "Fetch Amazon Orders", "type": "main", "index": 0 }, { "node": "Fetch FBA Inventory", "type": "main", "index": 0 }]] },
+    "Fetch Amazon Orders": { "main": [[{ "node": "Transform Orders", "type": "main", "index": 0 }]] },
+    "Fetch FBA Inventory": { "main": [[{ "node": "Transform Inventory", "type": "main", "index": 0 }]] },
+    "Transform Orders": { "main": [[{ "node": "Upsert Orders to Supabase", "type": "main", "index": 0 }]] },
+    "Transform Inventory": { "main": [[{ "node": "Upsert Inventory to Supabase", "type": "main", "index": 0 }]] }
+  },
+  "settings": {
+    "saveManualExecutions": true,
+    "callerPolicy": "workflowsFromSameOwner"
+  }
+}

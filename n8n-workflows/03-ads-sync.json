@@ -1,0 +1,114 @@
+{
+  "name": "ADM - Ads Data Sync (Meta + Amazon)",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [{ "field": "hours", "hoursInterval": 24, "triggerAtHour": 5 }]
+        }
+      },
+      "id": "cron-trigger",
+      "name": "Daily 5AM UTC",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "position": [240, 300]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "=https://graph.facebook.com/v19.0/act_{{$credentials.metaAdAccountId}}/insights",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "Authorization", "value": "Bearer {{$credentials.metaAccessToken}}" }
+          ]
+        },
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            { "name": "fields", "value": "campaign_name,impressions,clicks,spend,actions,ctr,cpc" },
+            { "name": "level", "value": "campaign" },
+            { "name": "time_range", "value": "={\"since\":\"{{$now.minus({days: 2}).format('yyyy-MM-dd')}}\",\"until\":\"{{$now.format('yyyy-MM-dd')}}\"}" },
+            { "name": "time_increment", "value": "1" }
+          ]
+        }
+      },
+      "id": "fetch-meta-ads",
+      "name": "Fetch Meta Ads Insights",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [460, 200]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://advertising-api-eu.amazon.com/reporting/reports",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "Amazon-Advertising-API-ClientId", "value": "={{$credentials.amazonAdsClientId}}" },
+            { "name": "Authorization", "value": "Bearer {{$credentials.amazonAdsAccessToken}}" },
+            { "name": "Amazon-Advertising-API-Scope", "value": "={{$credentials.amazonAdsProfileId}}" }
+          ]
+        },
+        "sendBody": true,
+        "body": "{\n  \"reportDate\": \"{{$now.minus({days: 1}).format('yyyyMMdd')}}\",\n  \"metrics\": \"impressions,clicks,cost,attributedSales14d,attributedConversions14d\",\n  \"reportType\": \"asin\"\n}"
+      },
+      "id": "fetch-amazon-ads",
+      "name": "Fetch Amazon Ads Report",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [460, 500]
+    },
+    {
+      "parameters": {
+        "jsCode": "const insights = $input.all().map(item => item.json);\nconst transformed = [];\n\nfor (const row of insights) {\n  const conversions = (row.actions || []).find(a => a.action_type === 'offsite_conversion.fb_pixel_purchase');\n  transformed.push({\n    campaign_id: row.campaign_id,\n    campaign_name: row.campaign_name,\n    date: row.date_start,\n    impressions: parseInt(row.impressions || '0'),\n    clicks: parseInt(row.clicks || '0'),\n    spend: parseFloat(row.spend || '0'),\n    conversions: parseInt(conversions?.value || '0'),\n    ctr: parseFloat(row.ctr || '0'),\n    cpc: parseFloat(row.cpc || '0'),\n    synced_at: new Date().toISOString()\n  });\n}\n\nreturn transformed.map(t => ({ json: t }));"
+      },
+      "id": "transform-meta",
+      "name": "Transform Meta Ads",
+      "type": "n8n-nodes-base.code",
+      "position": [700, 200]
+    },
+    {
+      "parameters": {
+        "jsCode": "const report = $input.all().map(item => item.json);\nconst today = new Date().toISOString().split('T')[0];\nconst transformed = [];\n\nfor (const row of report) {\n  const spend = parseFloat(row.cost || '0');\n  const sales = parseFloat(row.attributedSales14d || '0');\n  transformed.push({\n    campaign_id: row.campaignId,\n    ad_group_id: row.adGroupId,\n    asin: row.asin,\n    sku_id: null,\n    date: today,\n    impressions: parseInt(row.impressions || '0'),\n    clicks: parseInt(row.clicks || '0'),\n    spend: spend,\n    sales: sales,\n    acos: sales > 0 ? (spend / sales) : 0,\n    roas: spend > 0 ? (sales / spend) : 0,\n    ad_type: 'Sponsored Products',\n    synced_at: new Date().toISOString()\n  });\n}\n\nreturn transformed.map(t => ({ json: t }));"
+      },
+      "id": "transform-amazon-ads",
+      "name": "Transform Amazon Ads",
+      "type": "n8n-nodes-base.code",
+      "position": [700, 500]
+    },
+    {
+      "parameters": {
+        "operation": "upsert",
+        "tableId": "meta_ads",
+        "conflictColumns": "campaign_id,date",
+        "dataMode": "autoMap"
+      },
+      "id": "upsert-meta",
+      "name": "Upsert Meta Ads",
+      "type": "n8n-nodes-base.supabase",
+      "position": [920, 200]
+    },
+    {
+      "parameters": {
+        "operation": "upsert",
+        "tableId": "amazon_ads",
+        "conflictColumns": "campaign_id,ad_group_id,date",
+        "dataMode": "autoMap"
+      },
+      "id": "upsert-amazon-ads",
+      "name": "Upsert Amazon Ads",
+      "type": "n8n-nodes-base.supabase",
+      "position": [920, 500]
+    }
+  ],
+  "connections": {
+    "Daily 5AM UTC": { "main": [[{ "node": "Fetch Meta Ads Insights", "type": "main", "index": 0 }, { "node": "Fetch Amazon Ads Report", "type": "main", "index": 0 }]] },
+    "Fetch Meta Ads Insights": { "main": [[{ "node": "Transform Meta Ads", "type": "main", "index": 0 }]] },
+    "Fetch Amazon Ads Report": { "main": [[{ "node": "Transform Amazon Ads", "type": "main", "index": 0 }]] },
+    "Transform Meta Ads": { "main": [[{ "node": "Upsert Meta Ads", "type": "main", "index": 0 }]] },
+    "Transform Amazon Ads": { "main": [[{ "node": "Upsert Amazon Ads", "type": "main", "index": 0 }]] }
+  },
+  "settings": {
+    "saveManualExecutions": true,
+    "callerPolicy": "workflowsFromSameOwner"
+  }
+}

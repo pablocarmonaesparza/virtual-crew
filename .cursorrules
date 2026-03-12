@@ -1,0 +1,37 @@
+# Project: ADM S&OP Dashboard
+## Tech Stack
+- Next.js 15 (App Router)
+- TypeScript (strict mode)
+- Tailwind CSS v3
+- shadcn/ui for all UI primitives
+- Recharts for data visualization
+- Supabase (client SDK + server actions)
+- Zustand for global state management
+- TanStack Query for server state
+- Zod for validation
+
+## Design System
+- Font: Lora (headings), Inter (body/data)
+- Primary color: Dark Blue (#1a2b4a) — EXL Partners brand
+- Background: White (#ffffff)
+- Positive: green-500, Negative: red-500, Neutral: slate-400
+- All tables must support sorting, filtering, CSV export
+- All charts must use Recharts with consistent color palette
+- Mobile-first responsive design
+
+## Code Style
+- Functional components only, no classes
+- Named exports (never default exports for components)
+- Use 'use client' only when strictly necessary
+- Prefer Server Components + Server Actions
+- Descriptive variables: isLoading, hasError, forecastData
+- File structure: components/, lib/, app/, types/
+
+## Dashboard-Specific Rules
+- KPI cards always at top of page
+- Tables must support sorting, filtering, pagination
+- All monetary values in GBP (£) by default
+- Date format: DD MMM YYYY (UK format)
+- Charts must have tooltips, legends, responsive containers
+- Every table must have CSV export functionality
+- Never use inline styles — Tailwind only
