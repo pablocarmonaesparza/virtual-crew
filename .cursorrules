@@ -1,0 +1,49 @@
+# Project: ADM S&OP Dashboard
+
+## Product context
+- Client: Agua de Madre (ADM)
+- Delivery partner: EXL Partners via VirtualCrew Ltd
+- Security is a primary requirement; do not route business data through unapproved third-party services
+- Approved email for API and credential coordination: info@virtualcrew.co.uk
+
+## Target stack
+- Dashboard frontend target: Next.js 15 (App Router)
+- TypeScript in strict mode for frontend work
+- Tailwind CSS v4
+- shadcn/ui for UI primitives
+- Recharts for visualisation
+- Supabase for storage and analytics data
+- Python for deterministic forecasting and data preparation utilities
+- n8n for workflow automation
+- Anthropic Claude Sonnet 4.6 for recommendation generation
+
+## Design system
+- Background: white (#ffffff)
+- Primary brand accent: EXL dark blue (#1a2b4a)
+- Positive: green
+- Negative: red
+- Neutral: slate
+- Heading font: Lora
+- Body and data font: Inter
+
+## Code style
+- Prefer simple, typed, composable functions
+- Use named exports for frontend components
+- Keep components under 150 lines when practical
+- Avoid inline styles; use Tailwind classes
+- Avoid `any` in TypeScript and untyped dictionaries in Python when a dataclass or typed mapping fits better
+- Add comments only when the logic is not immediately obvious
+
+## Dashboard-specific rules
+- KPI cards belong at the top of the dashboard
+- Every data table must support sorting, filtering, and CSV export
+- Charts must include tooltips, legends, and responsive containers
+- Monetary values default to GBP unless a different currency is required by the source
+- Dates should use UK-style formatting
+- Use server-side data fetching where practical for dashboard reads
+
+## Security rules
+- Never hardcode tokens or credentials
+- Store secrets in environment variables or secure vaults only
+- Do not use Gmail or unapproved third-party APIs for data movement
+- Client credentials must not be exchanged through personal email, WhatsApp, or chat
