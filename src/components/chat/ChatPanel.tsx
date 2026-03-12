@@ -131,7 +131,7 @@ export function ChatPanel() {
                 </div>
               )}
               <div
-                className={`rounded-lg px-3 py-2 text-sm max-w-[85%] sm:max-w-[75%] md:max-w-[280px] ${
+                className={`rounded-lg px-3 py-2 text-sm max-w-[85%] sm:max-w-[75%] md:max-w-[280px] break-words ${
                   msg.role === "user"
                     ? "bg-exl-blue text-white"
                     : "bg-slate-100 text-foreground"

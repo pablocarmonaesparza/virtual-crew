@@ -32,25 +32,25 @@ export default function DashboardPage() {
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList className="grid w-full grid-cols-3 gap-1 sm:grid-cols-5 lg:w-auto lg:inline-grid">
-          <TabsTrigger value="forecast" className="gap-1.5">
-            <Target className="h-3.5 w-3.5" />
-            <span className="hidden sm:inline">Forecast</span>
+          <TabsTrigger value="forecast" className="gap-1 flex-col sm:flex-row sm:gap-1.5 py-2 sm:py-1.5">
+            <Target className="h-3.5 w-3.5 shrink-0" />
+            <span className="text-[9px] leading-none sm:text-xs sm:leading-normal">Forecast</span>
           </TabsTrigger>
-          <TabsTrigger value="sku" className="gap-1.5">
-            <Package className="h-3.5 w-3.5" />
-            <span className="hidden sm:inline">SKU Detail</span>
+          <TabsTrigger value="sku" className="gap-1 flex-col sm:flex-row sm:gap-1.5 py-2 sm:py-1.5">
+            <Package className="h-3.5 w-3.5 shrink-0" />
+            <span className="text-[9px] leading-none sm:text-xs sm:leading-normal">SKUs</span>
           </TabsTrigger>
-          <TabsTrigger value="ads" className="gap-1.5">
-            <BarChart3 className="h-3.5 w-3.5" />
-            <span className="hidden sm:inline">Ad Spend</span>
+          <TabsTrigger value="ads" className="gap-1 flex-col sm:flex-row sm:gap-1.5 py-2 sm:py-1.5">
+            <BarChart3 className="h-3.5 w-3.5 shrink-0" />
+            <span className="text-[9px] leading-none sm:text-xs sm:leading-normal">Ad Spend</span>
           </TabsTrigger>
-          <TabsTrigger value="cac" className="gap-1.5">
-            <Users className="h-3.5 w-3.5" />
-            <span className="hidden sm:inline">CAC</span>
+          <TabsTrigger value="cac" className="gap-1 flex-col sm:flex-row sm:gap-1.5 py-2 sm:py-1.5">
+            <Users className="h-3.5 w-3.5 shrink-0" />
+            <span className="text-[9px] leading-none sm:text-xs sm:leading-normal">CAC</span>
           </TabsTrigger>
-          <TabsTrigger value="recommendations" className="gap-1.5">
-            <Lightbulb className="h-3.5 w-3.5" />
-            <span className="hidden sm:inline">AI Insights</span>
+          <TabsTrigger value="recommendations" className="gap-1 flex-col sm:flex-row sm:gap-1.5 py-2 sm:py-1.5">
+            <Lightbulb className="h-3.5 w-3.5 shrink-0" />
+            <span className="text-[9px] leading-none sm:text-xs sm:leading-normal">AI Insights</span>
           </TabsTrigger>
         </TabsList>
 
