@@ -48,7 +48,7 @@ export function SKUTable() {
           <table className="w-full min-w-[700px] text-xs sm:text-sm" role="table">
             <thead>
               <tr className="border-b">
-                <th className="pb-3 text-left sticky left-0 bg-white z-10 min-w-[140px]">
+                <th className="pb-3 text-left sticky left-0 bg-white z-10 min-w-[140px] shadow-[2px_0_4px_-2px_rgba(0,0,0,0.1)]">
                   <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                     SKU
                   </span>
@@ -83,7 +83,7 @@ export function SKUTable() {
             <tbody>
               {pagedData.map((sku) => (
                 <tr key={sku.sku_id} className="border-b last:border-0 hover:bg-slate-50/50 transition-colors">
-                  <td className="py-2.5 font-medium sticky left-0 bg-white z-10">
+                  <td className="py-2.5 font-medium sticky left-0 bg-white z-10 shadow-[2px_0_4px_-2px_rgba(0,0,0,0.1)]">
                     <div className="text-sm">{sku.sku_title}</div>
                     <div className="text-[10px] text-muted-foreground">{sku.category}</div>
                   </td>

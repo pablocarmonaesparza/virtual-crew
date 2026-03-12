@@ -55,7 +55,7 @@ export default function DashboardPage() {
         </TabsList>
 
         <TabsContent value="forecast" className="space-y-6">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <ForecastChart />
             <ForecastTable />
           </div>
@@ -66,14 +66,14 @@ export default function DashboardPage() {
         </TabsContent>
 
         <TabsContent value="ads" className="space-y-6">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <AdSpendChart />
             <AdSpendTable />
           </div>
         </TabsContent>
 
         <TabsContent value="cac" className="space-y-6">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <NewVsRepeatChart />
             <CACChart />
           </div>

@@ -33,7 +33,7 @@ function KPICard({ title, value, change, icon, subtitle }: KPICardProps) {
             <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
               {title}
             </p>
-            <p className="text-2xl font-bold font-heading text-foreground">
+            <p className="text-xl sm:text-2xl font-bold font-heading text-foreground">
               {value}
             </p>
             {subtitle && (

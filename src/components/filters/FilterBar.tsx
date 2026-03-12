@@ -31,7 +31,7 @@ export function FilterBar() {
         {isOpen ? <ChevronUp className="h-4 w-4 text-muted-foreground" /> : <ChevronDown className="h-4 w-4 text-muted-foreground" />}
       </button>
 
-      <div className={`grid grid-cols-2 gap-3 p-4 pt-0 md:pt-4 md:flex md:flex-wrap md:items-center ${isOpen ? "grid" : "hidden md:flex"}`}>
+      <div className={`grid grid-cols-2 gap-3 p-4 md:flex md:flex-wrap md:items-center ${isOpen ? "grid" : "hidden md:flex"}`}>
       <div className="col-span-2 flex items-center gap-2">
         <label className="text-sm font-medium text-muted-foreground whitespace-nowrap">
           Client
