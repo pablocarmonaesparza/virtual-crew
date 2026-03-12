@@ -71,7 +71,7 @@ export function ForecastTable() {
       </CardHeader>
       <CardContent>
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[600px] text-sm" role="table">
+          <table className="w-full min-w-[600px] text-xs sm:text-sm" role="table">
             <thead>
               <tr className="border-b">
                 <th className="pb-3 text-left"><SortHeader label="Month" field="month" /></th>

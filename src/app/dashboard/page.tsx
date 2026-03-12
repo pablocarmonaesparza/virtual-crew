@@ -31,7 +31,7 @@ export default function DashboardPage() {
       <KPIBar />
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-5 lg:w-auto lg:inline-grid">
+        <TabsList className="grid w-full grid-cols-3 gap-1 sm:grid-cols-5 lg:w-auto lg:inline-grid">
           <TabsTrigger value="forecast" className="gap-1.5">
             <Target className="h-3.5 w-3.5" />
             <span className="hidden sm:inline">Forecast</span>
@@ -55,7 +55,7 @@ export default function DashboardPage() {
         </TabsList>
 
         <TabsContent value="forecast" className="space-y-6">
-          <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <ForecastChart />
             <ForecastTable />
           </div>
@@ -66,14 +66,14 @@ export default function DashboardPage() {
         </TabsContent>
 
         <TabsContent value="ads" className="space-y-6">
-          <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <AdSpendChart />
             <AdSpendTable />
           </div>
         </TabsContent>
 
         <TabsContent value="cac" className="space-y-6">
-          <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <NewVsRepeatChart />
             <CACChart />
           </div>

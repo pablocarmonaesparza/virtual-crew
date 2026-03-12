@@ -45,7 +45,7 @@ export function SKUTable() {
       </CardHeader>
       <CardContent>
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[900px] text-sm" role="table">
+          <table className="w-full min-w-[700px] text-xs sm:text-sm" role="table">
             <thead>
               <tr className="border-b">
                 <th className="pb-3 text-left sticky left-0 bg-white z-10 min-w-[140px]">

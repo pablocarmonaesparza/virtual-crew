@@ -31,13 +31,13 @@ export function FilterBar() {
         {isOpen ? <ChevronUp className="h-4 w-4 text-muted-foreground" /> : <ChevronDown className="h-4 w-4 text-muted-foreground" />}
       </button>
 
-      <div className={`flex flex-wrap items-center gap-3 p-4 pt-0 md:pt-4 ${isOpen ? "flex" : "hidden md:flex"}`}>
-      <div className="flex items-center gap-2">
+      <div className={`grid grid-cols-2 gap-3 p-4 pt-0 md:pt-4 md:flex md:flex-wrap md:items-center ${isOpen ? "grid" : "hidden md:flex"}`}>
+      <div className="col-span-2 flex items-center gap-2">
         <label className="text-sm font-medium text-muted-foreground whitespace-nowrap">
           Client
         </label>
         <Select value="adm" disabled>
-          <SelectTrigger className="w-[180px]">
+          <SelectTrigger className="w-full md:w-[180px]">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
@@ -54,7 +54,7 @@ export function FilterBar() {
           value={filters.selectedMonth}
           onValueChange={(v) => setFilter("selectedMonth", v)}
         >
-          <SelectTrigger className="w-[140px]">
+          <SelectTrigger className="w-full md:w-[140px]">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
@@ -79,7 +79,7 @@ export function FilterBar() {
           value={filters.channel}
           onValueChange={(v) => setFilter("channel", v as Channel)}
         >
-          <SelectTrigger className="w-[140px]">
+          <SelectTrigger className="w-full md:w-[140px]">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
@@ -98,7 +98,7 @@ export function FilterBar() {
           value={filters.category}
           onValueChange={(v) => setFilter("category", v as ProductCategory)}
         >
-          <SelectTrigger className="w-[160px]">
+          <SelectTrigger className="w-full md:w-[160px]">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
@@ -118,7 +118,7 @@ export function FilterBar() {
           value={filters.customerType}
           onValueChange={(v) => setFilter("customerType", v as CustomerType)}
         >
-          <SelectTrigger className="w-[140px]">
+          <SelectTrigger className="w-full md:w-[140px]">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
@@ -137,7 +137,7 @@ export function FilterBar() {
           value={filters.adsPlatform}
           onValueChange={(v) => setFilter("adsPlatform", v as AdsPlatform)}
         >
-          <SelectTrigger className="w-[150px]">
+          <SelectTrigger className="w-full md:w-[150px]">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
