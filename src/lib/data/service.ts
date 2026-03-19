@@ -25,8 +25,15 @@ import {
   MOCK_AD_SPEND_TABLE,
   MOCK_CAC_TABLE,
 } from "@/lib/mock-data";
+import {
+  getSalesDailyFromDB,
+  getSKUDataFromDB,
+  getKPIDataFromDB,
+  getAdSpendFromDB,
+  hasSupabaseData,
+} from "@/lib/supabase/queries";
 
-// ── Connection check ──
+// ── Connection checks ──
 
 export async function isShopifyConnected(): Promise<boolean> {
   try {
@@ -34,6 +41,41 @@ export async function isShopifyConnected(): Promise<boolean> {
   } catch {
     return false;
   }
+}
+
+/**
+ * Check if Supabase has meaningful sales data.
+ * Cached per request lifecycle (module-level, resets on each serverless invocation).
+ */
+let _supabaseCheckCache: { hasSalesData: boolean; checked: boolean } = {
+  hasSalesData: false,
+  checked: false,
+};
+
+async function checkSupabaseHasData(): Promise<boolean> {
+  if (_supabaseCheckCache.checked) return _supabaseCheckCache.hasSalesData;
+  try {
+    const result = await hasSupabaseData();
+    _supabaseCheckCache = { hasSalesData: result.hasSalesData, checked: true };
+    return result.hasSalesData;
+  } catch {
+    _supabaseCheckCache = { hasSalesData: false, checked: true };
+    return false;
+  }
+}
+
+/**
+ * Determine the active data source.
+ * Priority: Supabase (if has data) > Shopify (if connected) > Mock
+ */
+export async function getActiveDataSource(): Promise<"supabase" | "shopify" | "mock"> {
+  const supabaseHasData = await checkSupabaseHasData();
+  if (supabaseHasData) return "supabase";
+
+  const shopify = await isShopifyConnected();
+  if (shopify) return "shopify";
+
+  return "mock";
 }
 
 // ── Date range helpers ──
@@ -50,10 +92,8 @@ function getDateRangeForFilters(filters?: Partial<DashboardFilters>): {
   let startDate = new Date(now);
 
   if (selectedMonth) {
-    // If a specific month is selected, determine the range around it
     const [year, month] = selectedMonth.split("-").map(Number);
     endDate = new Date(year, month, 0); // last day of month
-    // Start from enough months back based on timeRange
     const monthsBack = timeRange === "mtd" ? 0 : timeRange === "ytd" ? month - 1 : timeRange === "3m" ? 3 : timeRange === "6m" ? 6 : 12;
     startDate = new Date(year, month - 1 - monthsBack, 1);
   } else {
@@ -72,8 +112,16 @@ function getDateRangeForFilters(filters?: Partial<DashboardFilters>): {
 export async function getForecastData(
   filters?: Partial<DashboardFilters>
 ): Promise<ForecastTableRow[]> {
-  const connected = await isShopifyConnected();
+  // 1. Try Supabase first
+  try {
+    const supabaseData = await getSalesDailyFromDB(filters);
+    if (supabaseData.length > 0) return supabaseData;
+  } catch (err) {
+    console.error("Supabase forecast fetch failed, trying Shopify:", err);
+  }
 
+  // 2. Try Shopify
+  const connected = await isShopifyConnected();
   if (!connected) {
     return applyForecastFilters(MOCK_FORECAST_TABLE, filters);
   }
@@ -88,7 +136,6 @@ export async function getForecastData(
 
     const internalOrders = transformRawOrders(rawOrders);
 
-    // Apply channel filter
     const filteredOrders =
       filters?.channel && filters.channel !== "all"
         ? internalOrders.filter(
@@ -109,8 +156,6 @@ function applyForecastFilters(
   filters?: Partial<DashboardFilters>
 ): ForecastTableRow[] {
   if (!filters?.selectedMonth) return data;
-  // The forecast table shows a range of months, so we return all rows
-  // but could filter by time range if needed
   return data;
 }
 
@@ -119,8 +164,16 @@ function applyForecastFilters(
 export async function getSKUData(
   filters?: Partial<DashboardFilters>
 ): Promise<SKUTableRow[]> {
-  const connected = await isShopifyConnected();
+  // 1. Try Supabase first
+  try {
+    const supabaseData = await getSKUDataFromDB(filters);
+    if (supabaseData.length > 0) return supabaseData;
+  } catch (err) {
+    console.error("Supabase SKU fetch failed, trying Shopify:", err);
+  }
 
+  // 2. Try Shopify
+  const connected = await isShopifyConnected();
   if (!connected) {
     return applySKUFilters(MOCK_SKU_TABLE, filters);
   }
@@ -171,8 +224,16 @@ function applySKUFilters(
 export async function getKPIData(
   filters?: Partial<DashboardFilters>
 ): Promise<KPIData> {
-  const connected = await isShopifyConnected();
+  // 1. Try Supabase first
+  try {
+    const supabaseKPI = await getKPIDataFromDB(filters);
+    if (supabaseKPI && supabaseKPI.total_revenue > 0) return supabaseKPI;
+  } catch (err) {
+    console.error("Supabase KPI fetch failed, trying Shopify:", err);
+  }
 
+  // 2. Try Shopify
+  const connected = await isShopifyConnected();
   if (!connected) {
     return MOCK_KPI_DATA;
   }
@@ -201,11 +262,20 @@ export async function getKPIData(
   }
 }
 
-// ── Ad Spend data (mock only — requires Amazon/Meta integration) ──
+// ── Ad Spend data ──
 
 export async function getAdSpendData(
   filters?: Partial<DashboardFilters>
 ): Promise<AdSpendTableRow[]> {
+  // 1. Try Supabase first
+  try {
+    const supabaseData = await getAdSpendFromDB(filters);
+    if (supabaseData.length > 0) return supabaseData;
+  } catch (err) {
+    console.error("Supabase ad spend fetch failed, falling back to mock:", err);
+  }
+
+  // 2. Fallback to mock (no Shopify source for ad spend)
   let data = MOCK_AD_SPEND_TABLE;
 
   if (filters?.adsPlatform && filters.adsPlatform !== "all") {
@@ -227,6 +297,10 @@ export async function getAdSpendData(
 export async function getCACData(
   filters?: Partial<DashboardFilters>
 ): Promise<CACTableRow[]> {
+  // CAC data currently comes from Shopify + mock — Supabase doesn't have a
+  // dedicated CAC table yet, so we keep existing logic but could derive from
+  // sales_daily + ad_daily_spend in the future.
+
   const connected = await isShopifyConnected();
 
   if (!connected) {
@@ -256,8 +330,6 @@ export async function getCACData(
 
     const cacData = transformCustomersToCAC(filteredOrders, rawCustomers);
 
-    // Since Shopify data only covers the Shopify channel, merge with
-    // mock Amazon data to keep the dashboard complete
     const amazonMockData = MOCK_CAC_TABLE.filter(
       (r) => r.channel === "Amazon"
     );

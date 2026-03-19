@@ -23,8 +23,10 @@ interface DashboardState {
   setShopifyConnected: (connected: boolean) => void;
   shopifyStoreName: string;
   setShopifyStoreName: (name: string) => void;
-  dataSource: "mock" | "live";
-  setDataSource: (source: "mock" | "live") => void;
+  supabaseConnected: boolean;
+  setSupabaseConnected: (connected: boolean) => void;
+  dataSource: "mock" | "live" | "supabase";
+  setDataSource: (source: "mock" | "live" | "supabase") => void;
 }
 
 const defaultFilters: DashboardFilters = {
@@ -69,12 +71,15 @@ export const useDashboardStore = create<DashboardState>((set) => ({
     }),
   shopifyConnected: false,
   setShopifyConnected: (connected) =>
-    set({
+    set((state) => ({
       shopifyConnected: connected,
-      dataSource: connected ? "live" : "mock",
-    }),
+      // Only upgrade to "live" if we're not already on "supabase"
+      dataSource: state.dataSource === "supabase" ? "supabase" : connected ? "live" : "mock",
+    })),
   shopifyStoreName: "",
   setShopifyStoreName: (name) => set({ shopifyStoreName: name }),
+  supabaseConnected: false,
+  setSupabaseConnected: (connected) => set({ supabaseConnected: connected }),
   dataSource: "mock",
   setDataSource: (source) => set({ dataSource: source }),
 }));
