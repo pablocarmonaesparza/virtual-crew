@@ -1,12 +1,92 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useDashboardStore } from "@/stores/dashboard-store";
 import { Send, X, Bot, User } from "lucide-react";
 import type { ChatMessage } from "@/types";
+
+/**
+ * Render simple markdown to React elements.
+ * Supports: **bold**, *italic*, \n line breaks, and - bullet points.
+ */
+function renderMarkdown(text: string): React.ReactNode {
+  // Split by double newlines for paragraphs, then process each
+  const blocks = text.split(/\n\n+/);
+
+  return blocks.map((block, blockIdx) => {
+    const trimmed = block.trim();
+    if (!trimmed) return null;
+
+    // Check if this block is a bullet list (all lines start with - or number.)
+    const lines = trimmed.split("\n");
+    const isBulletList = lines.every(
+      (line) => /^\s*[-*]\s/.test(line) || /^\s*\d+\.\s/.test(line) || line.trim() === ""
+    );
+
+    if (isBulletList) {
+      const items = lines.filter((line) => line.trim() !== "");
+      return (
+        <ul key={blockIdx} className="list-disc list-inside space-y-0.5 my-1">
+          {items.map((item, i) => {
+            const content = item.replace(/^\s*[-*]\s/, "").replace(/^\s*\d+\.\s/, "");
+            return <li key={i}>{renderInline(content)}</li>;
+          })}
+        </ul>
+      );
+    }
+
+    // Regular paragraph — join lines with <br/>
+    const inlineLines = lines.map((line, i) => (
+      <React.Fragment key={i}>
+        {i > 0 && <br />}
+        {renderInline(line)}
+      </React.Fragment>
+    ));
+
+    return (
+      <p key={blockIdx} className={blockIdx > 0 ? "mt-2" : ""}>
+        {inlineLines}
+      </p>
+    );
+  });
+}
+
+/** Render inline markdown: **bold** and *italic* */
+function renderInline(text: string): React.ReactNode {
+  // Match **bold** and *italic* patterns
+  const parts: React.ReactNode[] = [];
+  // Combined regex: **bold** or *italic*
+  const regex = /(\*\*(.+?)\*\*|\*(.+?)\*)/g;
+  let lastIndex = 0;
+  let match: RegExpExecArray | null;
+
+  while ((match = regex.exec(text)) !== null) {
+    // Add text before this match
+    if (match.index > lastIndex) {
+      parts.push(text.slice(lastIndex, match.index));
+    }
+
+    if (match[2]) {
+      // **bold**
+      parts.push(<strong key={match.index} className="font-semibold">{match[2]}</strong>);
+    } else if (match[3]) {
+      // *italic*
+      parts.push(<em key={match.index}>{match[3]}</em>);
+    }
+
+    lastIndex = match.index + match[0].length;
+  }
+
+  // Add remaining text
+  if (lastIndex < text.length) {
+    parts.push(text.slice(lastIndex));
+  }
+
+  return parts.length > 0 ? parts : text;
+}
 
 export function ChatPanel() {
   const { isChatOpen, toggleChat, chatMessages, addChatMessage } = useDashboardStore();
@@ -137,7 +217,7 @@ export function ChatPanel() {
                     : "bg-muted text-foreground"
                 }`}
               >
-                {msg.content}
+                {msg.role === "assistant" ? renderMarkdown(msg.content) : msg.content}
               </div>
               {msg.role === "user" && (
                 <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-muted mt-0.5">

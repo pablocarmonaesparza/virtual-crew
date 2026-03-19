@@ -54,7 +54,7 @@ export function AdSpendChart() {
   const data = useMemo(() => {
     const months = getMonthsForTimeRange(selectedMonth, timeRange);
     return filterChartDataByTimeRange(MOCK_CHART_DATA.adSpend, months);
-  }, [selectedMonth, timeRange]);
+  }, [selectedMonth, timeRange, adsPlatform]);
 
   // Determine which bars to show based on platform filter
   const showMeta = adsPlatform === "all" || adsPlatform === "meta";

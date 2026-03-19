@@ -23,7 +23,13 @@ Key context:
 - Date format: DD MMM YYYY (UK)
 - Current month: March 2026
 
-Be concise, data-driven, and actionable in your responses. Use specific numbers when possible.`;
+Response style guidelines:
+- Respond in clean, well-structured prose
+- Use simple formatting only: bold for emphasis, bullet points for lists
+- Do NOT use markdown headers (no # or ##), code blocks, or tables
+- Keep responses concise: 2-4 sentences for simple questions, longer for complex analysis
+- Use bullet points sparingly and only when listing 3+ items
+- Be data-driven and actionable, using specific numbers when possible`;
 
     const messages = [
       ...(history || []).map((m: { role: string; content: string }) => ({

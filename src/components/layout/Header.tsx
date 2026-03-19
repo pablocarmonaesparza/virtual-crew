@@ -5,12 +5,27 @@ import { useDashboardStore } from "@/stores/dashboard-store";
 import { Play, MessageCircle, RefreshCw, PanelLeft, Sun, Moon } from "lucide-react";
 
 export function Header() {
-  const { isRunning, setIsRunning, toggleChat, isChatOpen, setSidebarOpen, theme, toggleTheme } =
+  const { isRunning, setIsRunning, toggleChat, isChatOpen, setSidebarOpen, theme, toggleTheme, setLatestRecommendation, setActiveTab } =
     useDashboardStore();
 
-  const handleRun = () => {
+  const handleRun = async () => {
     setIsRunning(true);
-    setTimeout(() => setIsRunning(false), 3000);
+    try {
+      const response = await fetch("/api/recommendations", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ data: { month: "2026-03", trigger: "manual_run" } }),
+      });
+      if (response.ok) {
+        const result = await response.json();
+        setLatestRecommendation(result);
+        setActiveTab("recommendations");
+      }
+    } catch {
+      // Silently fail — mock data will still be available in recommendations tab
+    } finally {
+      setIsRunning(false);
+    }
   };
 
   return (

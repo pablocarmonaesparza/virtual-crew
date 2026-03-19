@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import type { DashboardFilters, ChatMessage } from "@/types";
+import type { DashboardFilters, ChatMessage, LLMRecommendation } from "@/types";
 
 interface DashboardState {
   filters: DashboardFilters;
@@ -27,6 +27,8 @@ interface DashboardState {
   setSupabaseConnected: (connected: boolean) => void;
   dataSource: "mock" | "live" | "supabase";
   setDataSource: (source: "mock" | "live" | "supabase") => void;
+  latestRecommendation: LLMRecommendation | null;
+  setLatestRecommendation: (rec: LLMRecommendation | null) => void;
 }
 
 const defaultFilters: DashboardFilters = {
@@ -53,7 +55,7 @@ export const useDashboardStore = create<DashboardState>((set) => ({
   setIsRunning: (running) => set({ isRunning: running }),
   activeTab: "forecast",
   setActiveTab: (tab) => set({ activeTab: tab }),
-  isSidebarOpen: true,
+  isSidebarOpen: false,
   toggleSidebar: () => set((state) => ({ isSidebarOpen: !state.isSidebarOpen })),
   setSidebarOpen: (open) => set({ isSidebarOpen: open }),
   theme:
@@ -82,4 +84,6 @@ export const useDashboardStore = create<DashboardState>((set) => ({
   setSupabaseConnected: (connected) => set({ supabaseConnected: connected }),
   dataSource: "mock",
   setDataSource: (source) => set({ dataSource: source }),
+  latestRecommendation: null,
+  setLatestRecommendation: (rec) => set({ latestRecommendation: rec }),
 }));

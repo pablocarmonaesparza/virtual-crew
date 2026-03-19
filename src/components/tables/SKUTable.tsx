@@ -8,14 +8,199 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { MOCK_SKU_TABLE, MOCK_SKUS } from "@/lib/mock-data";
 import { formatNumber, formatMonth, exportToCSV } from "@/lib/utils";
-import { Download } from "lucide-react";
+import { Download, X } from "lucide-react";
 import { useDashboardStore } from "@/stores/dashboard-store";
 import { filterSKUByCategory, getMonthsForTimeRange } from "@/lib/utils/filters";
-import type { ProductCategory } from "@/types";
+import type { ProductCategory, SKU } from "@/types";
+
+interface SKUModalProps {
+  skuId: string;
+  months: Record<string, { forecast_baseline: number; forecast_ambitious: number; actual: number | null; accuracy_pct: number | null; mom_change: number | null }>;
+  onClose: () => void;
+}
+
+function SKUDetailModal({ skuId, months, onClose }: SKUModalProps) {
+  const skuDetail: SKU | undefined = MOCK_SKUS.find((s) => s.sku_id === skuId);
+
+  // Close on Escape key
+  useEffect(() => {
+    const handleKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+    document.addEventListener("keydown", handleKey);
+    return () => document.removeEventListener("keydown", handleKey);
+  }, [onClose]);
+
+  // Prevent body scroll
+  useEffect(() => {
+    document.body.style.overflow = "hidden";
+    return () => { document.body.style.overflow = ""; };
+  }, []);
+
+  const sortedMonths = Object.keys(months).sort();
+
+  // Build mini sparkline text summary
+  const actuals = sortedMonths
+    .map((m) => months[m].actual)
+    .filter((v): v is number => v !== null);
+  const trend =
+    actuals.length >= 2
+      ? actuals[actuals.length - 1] > actuals[actuals.length - 2]
+        ? "Trending up"
+        : actuals[actuals.length - 1] < actuals[actuals.length - 2]
+        ? "Trending down"
+        : "Flat"
+      : "Insufficient data";
+  const avgAccuracy =
+    sortedMonths
+      .map((m) => months[m].accuracy_pct)
+      .filter((v): v is number => v !== null);
+  const avgAcc =
+    avgAccuracy.length > 0
+      ? (avgAccuracy.reduce((a, b) => a + b, 0) / avgAccuracy.length).toFixed(1)
+      : null;
+
+  return (
+    <div
+      className="fixed inset-0 z-[100] flex items-center justify-center bg-black/40 backdrop-blur-sm transition-opacity duration-200 animate-in fade-in"
+      onClick={onClose}
+    >
+      <div
+        className="relative w-full max-w-2xl mx-4 max-h-[85vh] overflow-y-auto rounded-xl border border-border/40 bg-white dark:bg-card shadow-2xl transition-all duration-200 animate-in zoom-in-95"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Header */}
+        <div className="sticky top-0 z-10 flex items-center justify-between border-b border-border/30 bg-white dark:bg-card px-6 py-4">
+          <div>
+            <h3 className="text-lg font-semibold text-foreground">{skuDetail?.product_title ?? skuId}</h3>
+            <p className="text-xs text-muted-foreground mt-0.5">{skuId}</p>
+          </div>
+          <button
+            onClick={onClose}
+            className="rounded-md p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+            aria-label="Close modal"
+          >
+            <X className="h-5 w-5" />
+          </button>
+        </div>
+
+        <div className="p-6 space-y-6">
+          {/* Product Details */}
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+            <div>
+              <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground/70">Product Name</p>
+              <p className="text-sm font-medium mt-0.5">{skuDetail?.product_title ?? "—"}</p>
+            </div>
+            <div>
+              <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground/70">Category</p>
+              <p className="text-sm font-medium mt-0.5 capitalize">{skuDetail?.category?.replace("_", " ") ?? "—"}</p>
+            </div>
+            <div>
+              <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground/70">Channel</p>
+              <p className="text-sm font-medium mt-0.5">{skuDetail?.channel_primary ?? "—"}</p>
+            </div>
+            <div>
+              <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground/70">Product Type</p>
+              <p className="text-sm font-medium mt-0.5">{skuDetail?.product_type ?? "—"}</p>
+            </div>
+            <div>
+              <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground/70">Pack Size</p>
+              <p className="text-sm font-medium mt-0.5">{skuDetail?.pack_size ?? "—"}</p>
+            </div>
+            <div>
+              <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground/70">Flavour</p>
+              <p className="text-sm font-medium mt-0.5">{skuDetail?.flavour ?? "—"}</p>
+            </div>
+          </div>
+
+          {/* Trend Summary */}
+          <div className="rounded-lg bg-muted/50 p-4 flex items-center justify-between">
+            <div>
+              <p className="text-xs font-medium text-muted-foreground">Performance Trend</p>
+              <p className="text-sm font-semibold mt-0.5">{trend}</p>
+            </div>
+            {avgAcc && (
+              <div className="text-right">
+                <p className="text-xs font-medium text-muted-foreground">Avg Accuracy</p>
+                <p className={`text-sm font-semibold mt-0.5 ${Number(avgAcc) >= 95 ? "text-green-600" : Number(avgAcc) >= 90 ? "text-yellow-600" : "text-red-600"}`}>
+                  {avgAcc}%
+                </p>
+              </div>
+            )}
+            {/* Mini sparkline using inline bars */}
+            <div className="flex items-end gap-0.5 h-8">
+              {actuals.map((val, i) => {
+                const max = Math.max(...actuals);
+                const height = max > 0 ? (val / max) * 100 : 0;
+                return (
+                  <div
+                    key={i}
+                    className="w-2 rounded-t bg-primary/60"
+                    style={{ height: `${Math.max(height, 10)}%` }}
+                    title={`${val} units`}
+                  />
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Monthly Performance Table */}
+          <div>
+            <h4 className="text-sm font-semibold mb-3 text-foreground">Monthly Performance</h4>
+            <div className="overflow-x-auto rounded-lg border border-border/30">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-border/40 bg-muted/30">
+                    <th className="px-3 py-2 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">Month</th>
+                    <th className="px-3 py-2 text-right text-xs font-semibold uppercase tracking-wider text-muted-foreground">Baseline</th>
+                    <th className="px-3 py-2 text-right text-xs font-semibold uppercase tracking-wider text-muted-foreground">Ambitious</th>
+                    <th className="px-3 py-2 text-right text-xs font-semibold uppercase tracking-wider text-muted-foreground">Actual</th>
+                    <th className="px-3 py-2 text-right text-xs font-semibold uppercase tracking-wider text-muted-foreground">Accuracy</th>
+                    <th className="px-3 py-2 text-right text-xs font-semibold uppercase tracking-wider text-muted-foreground">MoM</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {sortedMonths.map((m) => {
+                    const d = months[m];
+                    return (
+                      <tr key={m} className="border-b border-border/20 last:border-0 hover:bg-muted/30">
+                        <td className="px-3 py-2 font-medium">{formatMonth(m)}</td>
+                        <td className="px-3 py-2 text-right tabular-nums">{formatNumber(d.forecast_baseline)}</td>
+                        <td className="px-3 py-2 text-right tabular-nums text-muted-foreground">{formatNumber(d.forecast_ambitious)}</td>
+                        <td className="px-3 py-2 text-right tabular-nums font-medium">
+                          {d.actual !== null ? formatNumber(d.actual) : "—"}
+                        </td>
+                        <td className="px-3 py-2 text-right">
+                          {d.accuracy_pct !== null ? (
+                            <span className={d.accuracy_pct >= 95 ? "text-green-600" : d.accuracy_pct >= 90 ? "text-yellow-600" : "text-red-600"}>
+                              {d.accuracy_pct.toFixed(1)}%
+                            </span>
+                          ) : "—"}
+                        </td>
+                        <td className="px-3 py-2 text-right">
+                          {d.mom_change !== null ? (
+                            <span className={d.mom_change >= 0 ? "text-green-600" : "text-red-600"}>
+                              {d.mom_change >= 0 ? "+" : ""}{d.mom_change.toFixed(1)}%
+                            </span>
+                          ) : "—"}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 export function SKUTable() {
   const { filters, shopifyConnected } = useDashboardStore();
   const [page, setPage] = useState(0);
+  const [selectedSku, setSelectedSku] = useState<{ skuId: string; months: Record<string, { forecast_baseline: number; forecast_ambitious: number; actual: number | null; accuracy_pct: number | null; mom_change: number | null }> } | null>(null);
   const pageSize = 10;
 
   // Fetch live SKU data when Shopify is connected
@@ -166,9 +351,14 @@ export function SKUTable() {
                     const category = sku.category as string;
                     const productType = sku.product_type as string;
                     const months = sku.months as Record<string, Record<string, unknown>> | undefined;
+                    const typedMonths = months as unknown as Record<string, { forecast_baseline: number; forecast_ambitious: number; actual: number | null; accuracy_pct: number | null; mom_change: number | null }> | undefined;
 
                     return (
-                      <tr key={skuId} className="border-b border-border/30 last:border-0 hover:bg-muted/50 transition-colors">
+                      <tr
+                        key={skuId}
+                        className="border-b border-border/30 last:border-0 hover:bg-muted/50 transition-colors cursor-pointer"
+                        onClick={() => setSelectedSku({ skuId, months: typedMonths ?? {} })}
+                      >
                         <td className="py-2.5 font-medium sticky left-0 bg-card z-10">
                           <div className="text-sm">{skuTitle}</div>
                           <div className="text-[10px] text-muted-foreground">{category}</div>
@@ -241,6 +431,15 @@ export function SKUTable() {
           </>
         )}
       </CardContent>
+
+      {/* SKU Detail Modal */}
+      {selectedSku && (
+        <SKUDetailModal
+          skuId={selectedSku.skuId}
+          months={selectedSku.months}
+          onClose={() => setSelectedSku(null)}
+        />
+      )}
     </Card>
   );
 }
