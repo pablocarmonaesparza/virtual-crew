@@ -8,7 +8,8 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { MOCK_SKU_TABLE, MOCK_SKUS } from "@/lib/mock-data";
 import { formatNumber, formatMonth, exportToCSV } from "@/lib/utils";
-import { Download, X } from "lucide-react";
+import { Download, X, Search } from "lucide-react";
+import { useToast } from "@/components/ui/toast";
 import { useDashboardStore } from "@/stores/dashboard-store";
 import { filterSKUByCategory, getMonthsForTimeRange } from "@/lib/utils/filters";
 import type { ProductCategory, SKU } from "@/types";
@@ -66,11 +67,11 @@ function SKUDetailModal({ skuId, months, onClose }: SKUModalProps) {
       onClick={onClose}
     >
       <div
-        className="relative w-full max-w-2xl mx-4 max-h-[85vh] overflow-y-auto rounded-xl border border-border/40 bg-white dark:bg-card shadow-2xl transition-all duration-200 animate-in zoom-in-95"
+        className="relative w-full max-w-2xl mx-4 max-h-[85vh] overflow-y-auto rounded-xl border border-border/40 bg-card shadow-2xl transition-all duration-200 animate-in zoom-in-95"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="sticky top-0 z-10 flex items-center justify-between border-b border-border/30 bg-white dark:bg-card px-6 py-4">
+        <div className="sticky top-0 z-10 flex items-center justify-between border-b border-border/30 bg-card px-6 py-4">
           <div>
             <h3 className="text-lg font-semibold text-foreground">{skuDetail?.product_title ?? skuId}</h3>
             <p className="text-xs text-muted-foreground mt-0.5">{skuId}</p>
@@ -202,6 +203,7 @@ export function SKUTable() {
   const [page, setPage] = useState(0);
   const [selectedSku, setSelectedSku] = useState<{ skuId: string; months: Record<string, { forecast_baseline: number; forecast_ambitious: number; actual: number | null; accuracy_pct: number | null; mom_change: number | null }> } | null>(null);
   const pageSize = 10;
+  const { toast } = useToast();
 
   // Fetch live SKU data when Shopify is connected
   const { data: liveSKU, isLoading: isLiveLoading } = useQuery({
@@ -288,6 +290,7 @@ export function SKUTable() {
       })
     );
     exportToCSV(rows, "sku-level-detail");
+    toast("CSV exported successfully");
   };
 
   return (
@@ -305,6 +308,12 @@ export function SKUTable() {
             {Array.from({ length: 6 }).map((_, i) => (
               <Skeleton key={i} className="h-10 w-full" />
             ))}
+          </div>
+        ) : data.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-12 text-center">
+            <Search className="h-10 w-10 text-muted-foreground/40 mb-3" />
+            <p className="text-sm font-medium text-muted-foreground">No data matches your current filters</p>
+            <p className="text-xs text-muted-foreground/70 mt-1">Try adjusting your filters or selecting a different time range</p>
           </div>
         ) : (
           <>
@@ -376,8 +385,8 @@ export function SKUTable() {
                           const bgClass =
                             actual !== null
                               ? isPositive
-                                ? "bg-green-50/60"
-                                : "bg-red-50/60"
+                                ? "bg-green-50/60 dark:bg-green-950/30"
+                                : "bg-red-50/60 dark:bg-red-950/30"
                               : "";
                           return (
                             <td key={m} colSpan={3} className={`border-l border-border/30 ${bgClass}`}>

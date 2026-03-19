@@ -163,8 +163,8 @@ export function ChatPanel() {
     <Card className="fixed bottom-4 right-4 z-50 w-[400px] max-h-[600px] shadow-2xl flex flex-col">
       <CardHeader className="flex flex-row items-center justify-between p-4 pb-2 border-b border-border/30">
         <div className="flex items-center gap-2">
-          <div className="flex h-7 w-7 items-center justify-center rounded-full bg-[#1a2b4a] dark:bg-primary">
-            <Bot className="h-4 w-4 text-white dark:text-primary-foreground" />
+          <div className="flex h-7 w-7 items-center justify-center rounded-full bg-primary">
+            <Bot className="h-4 w-4 text-primary-foreground" />
           </div>
           <CardTitle className="text-sm">S&OP Assistant</CardTitle>
         </div>
@@ -213,7 +213,7 @@ export function ChatPanel() {
               <div
                 className={`rounded-lg px-3 py-2 text-sm max-w-[280px] ${
                   msg.role === "user"
-                    ? "bg-[#1a2b4a] dark:bg-primary text-white dark:text-primary-foreground"
+                    ? "bg-primary text-primary-foreground"
                     : "bg-muted text-foreground"
                 }`}
               >
@@ -255,7 +255,7 @@ export function ChatPanel() {
             size="icon"
             onClick={handleSend}
             disabled={!input.trim() || isLoading}
-            className="bg-[#1a2b4a] hover:bg-[#2a4270] dark:bg-primary dark:hover:bg-primary/90 shrink-0"
+            className="bg-primary hover:bg-primary/90 text-primary-foreground shrink-0"
           >
             <Send className="h-4 w-4" />
           </Button>

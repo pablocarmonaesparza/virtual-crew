@@ -1,5 +1,6 @@
 "use client";
 
+import { cn } from "@/lib/utils/cn";
 import { Button } from "@/components/ui/button";
 import { useDashboardStore } from "@/stores/dashboard-store";
 import { Play, MessageCircle, RefreshCw, PanelLeft, Sun, Moon } from "lucide-react";
@@ -29,7 +30,7 @@ export function Header() {
   };
 
   return (
-    <header className="sticky top-0 z-30 border-b border-border/30 bg-white dark:bg-card">
+    <header className="sticky top-0 z-30 border-b border-border/30 bg-card">
       <div className="flex h-14 items-center justify-between px-4 md:px-6">
         <div className="flex items-center gap-3">
           {/* Mobile sidebar trigger */}
@@ -69,7 +70,7 @@ export function Header() {
             onClick={handleRun}
             disabled={isRunning}
             size="sm"
-            className="bg-[#1a2b4a] hover:bg-[#2a4270] text-white dark:bg-primary dark:text-primary-foreground dark:hover:bg-primary/90 h-8 text-xs"
+            className="bg-primary hover:bg-primary/90 text-primary-foreground h-8 text-xs"
           >
             {isRunning ? (
               <>
@@ -90,7 +91,7 @@ export function Header() {
             aria-label="Toggle chat"
             className={cn(
               "h-8 w-8",
-              isChatOpen ? "bg-[#1a2b4a] hover:bg-[#2a4270] text-white dark:bg-primary dark:text-primary-foreground" : ""
+              isChatOpen ? "bg-primary hover:bg-primary/90 text-primary-foreground" : ""
             )}
           >
             <MessageCircle className="h-3.5 w-3.5" />
@@ -99,8 +100,4 @@ export function Header() {
       </div>
     </header>
   );
-}
-
-function cn(...classes: (string | boolean | undefined)[]) {
-  return classes.filter(Boolean).join(" ");
 }

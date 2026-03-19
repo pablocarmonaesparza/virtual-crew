@@ -9,7 +9,7 @@ export function DataSourceIndicator() {
   // Supabase with real sales data
   if (dataSource === "supabase" && supabaseConnected) {
     return (
-      <div className="flex items-center gap-1.5 rounded-full border border-green-200 bg-green-50 px-2.5 py-1 text-[11px] font-medium text-green-700 shrink-0">
+      <div className="flex items-center gap-1.5 rounded-full border border-green-200 dark:border-green-800 bg-green-50 dark:bg-green-950/50 px-2.5 py-1 text-[11px] font-medium text-green-700 dark:text-green-400 shrink-0">
         <Circle className="h-1.5 w-1.5 fill-green-500 text-green-500" />
         Live &middot; Supabase
       </div>
@@ -19,7 +19,7 @@ export function DataSourceIndicator() {
   // Shopify direct connection
   if (shopifyConnected && dataSource === "live") {
     return (
-      <div className="flex items-center gap-1.5 rounded-full border border-green-200 bg-green-50 px-2.5 py-1 text-[11px] font-medium text-green-700 shrink-0">
+      <div className="flex items-center gap-1.5 rounded-full border border-green-200 dark:border-green-800 bg-green-50 dark:bg-green-950/50 px-2.5 py-1 text-[11px] font-medium text-green-700 dark:text-green-400 shrink-0">
         <Circle className="h-1.5 w-1.5 fill-green-500 text-green-500" />
         Live &middot; Shopify
       </div>

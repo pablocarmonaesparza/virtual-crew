@@ -1,5 +1,6 @@
 "use client";
 
+import { cn } from "@/lib/utils/cn";
 import { useEffect, useState, useCallback } from "react";
 import { useSearchParams } from "next/navigation";
 import { motion, AnimatePresence } from "motion/react";
@@ -31,6 +32,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useDashboardStore } from "@/stores/dashboard-store";
+import { exportToCSV } from "@/lib/utils/csv";
+import { useToast } from "@/components/ui/toast";
 
 // ── Types ──
 
@@ -169,7 +172,7 @@ function ShopifyIntegrationCard({ integration }: { integration: IntegrationConfi
         </div>
         <p className="text-xs text-muted-foreground mb-1">{integration.description}</p>
         {shopifyConnected && shopifyStoreName && (
-          <p className="text-xs text-green-700 font-medium mb-2">{shopifyStoreName}</p>
+          <p className="text-xs text-green-700 dark:text-green-400 font-medium mb-2">{shopifyStoreName}</p>
         )}
         {!shopifyConnected && <div className="mb-2" />}
         <div className="flex items-center justify-between">
@@ -197,9 +200,11 @@ function ShopifyIntegrationCard({ integration }: { integration: IntegrationConfi
 function OtherIntegrationCard({
   integration,
   isConfigured,
+  onConfigure,
 }: {
   integration: IntegrationConfig;
   isConfigured?: boolean;
+  onConfigure?: () => void;
 }) {
   return (
     <Card className="h-full">
@@ -225,7 +230,7 @@ function OtherIntegrationCard({
               </span>
             ))}
           </div>
-          <Button variant="outline" size="sm" className="h-6 text-[10px] px-2 shrink-0" disabled={!isConfigured}>
+          <Button variant="outline" size="sm" className="h-6 text-[10px] px-2 shrink-0" onClick={onConfigure}>
             Configure
           </Button>
         </div>
@@ -234,15 +239,87 @@ function OtherIntegrationCard({
   );
 }
 
+const CONFIGURE_INSTRUCTIONS: Record<string, { title: string; steps: string[] }> = {
+  "Amazon SP-API": {
+    title: "Configure Amazon SP-API",
+    steps: [
+      "1. Register as a developer in Amazon Seller Central",
+      "2. Create an SP-API application under Apps & Services",
+      "3. Generate a Refresh Token via the OAuth flow",
+      "4. Add the following environment variables: AMAZON_SP_CLIENT_ID, AMAZON_SP_CLIENT_SECRET, AMAZON_SP_REFRESH_TOKEN",
+      "5. Restart the N8N workflow 'ADM: Amazon SP-API Sync'",
+    ],
+  },
+  "Amazon Ads": {
+    title: "Configure Amazon Ads API",
+    steps: [
+      "1. Log in to the Amazon Advertising Console",
+      "2. Navigate to Campaign Manager and create an API profile",
+      "3. Generate OAuth credentials via the Amazon Ads developer portal",
+      "4. Add the following environment variables: AMAZON_ADS_CLIENT_ID, AMAZON_ADS_CLIENT_SECRET, AMAZON_ADS_REFRESH_TOKEN, AMAZON_ADS_PROFILE_ID",
+      "5. Restart the N8N workflow 'ADM: Amazon Ads Sync'",
+    ],
+  },
+  "Meta Ads": {
+    title: "Configure Meta Ads API",
+    steps: [
+      "1. Go to Facebook Business Manager and create a System User",
+      "2. Generate a long-lived access token with ads_read permissions",
+      "3. Note your Ad Account ID from Business Settings",
+      "4. Add the following environment variables: META_ADS_ACCESS_TOKEN, META_ADS_ACCOUNT_ID",
+      "5. Restart the N8N workflow 'ADM: Meta Ads Sync'",
+    ],
+  },
+};
+
+function ConfigureModal({ name, onClose }: { name: string; onClose: () => void }) {
+  const instructions = CONFIGURE_INSTRUCTIONS[name];
+  if (!instructions) return null;
+
+  return (
+    <div
+      className="fixed inset-0 z-[100] flex items-center justify-center bg-black/40 backdrop-blur-sm animate-in fade-in"
+      onClick={onClose}
+    >
+      <div
+        className="relative w-full max-w-lg mx-4 rounded-xl border border-border/40 bg-card shadow-2xl animate-in zoom-in-95"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex items-center justify-between border-b border-border/30 px-6 py-4">
+          <h3 className="text-lg font-semibold text-foreground">{instructions.title}</h3>
+          <button
+            onClick={onClose}
+            className="rounded-md p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+            aria-label="Close modal"
+          >
+            <X className="h-5 w-5" />
+          </button>
+        </div>
+        <div className="p-6 space-y-3">
+          <p className="text-sm text-muted-foreground mb-4">Follow these steps to connect {name}:</p>
+          {instructions.steps.map((step, i) => (
+            <p key={i} className="text-sm text-foreground">{step}</p>
+          ))}
+        </div>
+        <div className="border-t border-border/30 px-6 py-4 flex justify-end">
+          <Button variant="outline" size="sm" onClick={onClose}>
+            Close
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function SyncLogRow({ log }: { log: SyncLog }) {
   const statusColor =
     log.status === "success"
-      ? "text-green-700 bg-green-50 border-green-200"
+      ? "text-green-700 dark:text-green-400 bg-green-50 dark:bg-green-950/50 border-green-200 dark:border-green-800"
       : log.status === "error"
-        ? "text-red-700 bg-red-50 border-red-200"
+        ? "text-red-700 dark:text-red-400 bg-red-50 dark:bg-red-950/50 border-red-200 dark:border-red-800"
         : log.status === "running"
-          ? "text-blue-700 bg-blue-50 border-blue-200"
-          : "text-yellow-700 bg-yellow-50 border-yellow-200";
+          ? "text-blue-700 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/50 border-blue-200 dark:border-blue-800"
+          : "text-yellow-700 dark:text-yellow-400 bg-yellow-50 dark:bg-yellow-950/50 border-yellow-200 dark:border-yellow-800";
 
   const formattedDate = log.started_at
     ? new Date(log.started_at).toLocaleString("en-GB", {
@@ -293,6 +370,8 @@ export default function SettingsPage() {
   const [showSuccessBanner, setShowSuccessBanner] = useState(false);
   const [status, setStatus] = useState<StatusResponse | null>(null);
   const [syncLogs, setSyncLogs] = useState<SyncLog[]>([]);
+  const [configureModal, setConfigureModal] = useState<string | null>(null);
+  const { toast } = useToast();
 
   // Fetch overall status on mount
   const fetchStatus = useCallback(async () => {
@@ -425,7 +504,7 @@ export default function SettingsPage() {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -8 }}
             transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
-            className="flex items-center justify-between rounded-lg border border-green-200/50 bg-green-50 px-4 py-3 text-sm text-green-800"
+            className="flex items-center justify-between rounded-lg border border-green-200/50 dark:border-green-800/50 bg-green-50 dark:bg-green-950/50 px-4 py-3 text-sm text-green-800 dark:text-green-300"
           >
             <div className="flex items-center gap-2">
               <CheckCircle2 className="h-4 w-4 shrink-0" />
@@ -611,8 +690,4 @@ export default function SettingsPage() {
       </section>
     </div>
   );
-}
-
-function cn(...classes: (string | boolean | undefined)[]) {
-  return classes.filter(Boolean).join(" ");
 }
