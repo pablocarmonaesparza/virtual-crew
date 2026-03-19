@@ -98,9 +98,9 @@ export function KPIBar() {
         month: filters.selectedMonth,
         platform: filters.adsPlatform,
         channel: filters.channel,
-        summary: "true",
+        timeRange: filters.timeRange,
       });
-      const res = await fetch(`/api/shopify/orders?${params}`);
+      const res = await fetch(`/api/kpi?${params}`);
       if (!res.ok) throw new Error("Failed to fetch KPI data");
       return res.json();
     },

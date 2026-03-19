@@ -4,10 +4,12 @@ import { cn } from "@/lib/utils/cn";
 import { Button } from "@/components/ui/button";
 import { useDashboardStore } from "@/stores/dashboard-store";
 import { Play, MessageCircle, RefreshCw, PanelLeft, Sun, Moon } from "lucide-react";
+import { useToast } from "@/components/ui/toast";
 
 export function Header() {
   const { isRunning, setIsRunning, toggleChat, isChatOpen, setSidebarOpen, theme, toggleTheme, setLatestRecommendation, setActiveTab } =
     useDashboardStore();
+  const { toast } = useToast();
 
   const handleRun = async () => {
     setIsRunning(true);
@@ -21,9 +23,12 @@ export function Header() {
         const result = await response.json();
         setLatestRecommendation(result);
         setActiveTab("recommendations");
+        toast("Analysis complete");
+      } else {
+        toast("Analysis failed — using cached data", "error");
       }
     } catch {
-      // Silently fail — mock data will still be available in recommendations tab
+      toast("Analysis failed — using cached data", "error");
     } finally {
       setIsRunning(false);
     }

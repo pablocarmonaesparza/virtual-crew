@@ -3,3 +3,29 @@
 # Format: [Iteration N] [Timestamp] — Summary
 
 --- START ---
+
+[Iteration 1-3] [2026-03-19] — Phase 1 Complete
+
+Task 1.1 — Fix live data field mismatches:
+- ForecastTable.tsx: changed `liveForecast?.rows` to `liveForecast?.data` to match /api/forecast response shape
+- Created /api/kpi/route.ts: new route using getKPIData() from data service, maps KPIData to the shape KPIBar.tsx expects (totalRevenue, revenueMom, etc.)
+- Updated KPIBar.tsx to fetch from /api/kpi instead of /api/shopify/orders
+- Created /api/shopify/inventory/route.ts: new route using getSKUData() from data service, returns { rows, months } matching SKUTable.tsx expectations
+
+Task 1.2 — Fix customerType filter:
+- NewVsRepeatChart.tsx: already had customerType wiring (zeroes out new_customers or returning_customers based on filter) — verified working
+- CACTable.tsx: added customerType filter logic — zeroes out returning columns when "new" selected, zeroes out new columns when "returning" selected. Added customerType to useMemo dependency array.
+
+Task 1.3 — Expose timeRange filter in UI:
+- FilterBar.tsx: added Time Range selector with options 3m / 6m / 12m / YTD
+- Added TimeRange import from types
+- Added timeRange !== "6m" to hasActiveFilters check
+- Verified: ForecastTable, SKUTable, CACTable, AdSpendChart, NewVsRepeatChart all read timeRange from store
+
+Bonus fixes (pre-existing):
+- toast.tsx: fixed `<ToastContext value={toast}>` to `<ToastContext value={{ toast }}>` (TS2322 type error)
+- NewVsRepeatChart.tsx: fixed indentation in empty-state ternary that caused Turbopack parse error
+
+Build verification:
+- npx tsc --noEmit: PASS (0 errors)
+- npm run build: PASS (compiled successfully, all routes generated)

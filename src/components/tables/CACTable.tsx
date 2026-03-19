@@ -6,8 +6,9 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { MOCK_CAC_TABLE } from "@/lib/mock-data";
 import { formatCurrency, formatCurrencyPrecise, formatNumber, formatPercent, formatMonth, exportToCSV } from "@/lib/utils";
-import { Download } from "lucide-react";
+import { Download, Search } from "lucide-react";
 import { useDashboardStore } from "@/stores/dashboard-store";
+import { useToast } from "@/components/ui/toast";
 import {
   getMonthsForTimeRange,
   filterCACByChannel,
@@ -16,19 +17,30 @@ import {
 
 export function CACTable() {
   const { filters } = useDashboardStore();
+  const { toast } = useToast();
 
   const data = useMemo(() => {
     const months = getMonthsForTimeRange(filters.selectedMonth, filters.timeRange);
     let filtered = filterCACByTimeRange(MOCK_CAC_TABLE, months);
     filtered = filterCACByChannel(filtered, filters.channel);
 
-    // Filter by customerType: if "new", only show new customer columns meaningfully
-    // if "returning", only show returning customer columns meaningfully
-    // The actual row filtering is not applicable since each row has both new and returning.
-    // Instead we keep all rows but the UI already shows both; the customerType filter
-    // is more relevant for the charts. We keep all rows here for full visibility.
+    // Apply customerType filter: zero out the irrelevant customer type columns
+    if (filters.customerType === "new") {
+      filtered = filtered.map((row) => ({
+        ...row,
+        returning_customers: 0,
+        returning_cac: 0,
+      }));
+    } else if (filters.customerType === "returning") {
+      filtered = filtered.map((row) => ({
+        ...row,
+        new_customers: 0,
+        new_cac: 0,
+      }));
+    }
+
     return filtered;
-  }, [filters.selectedMonth, filters.timeRange, filters.channel]);
+  }, [filters.selectedMonth, filters.timeRange, filters.channel, filters.customerType]);
 
   const handleExport = () => {
     exportToCSV(
@@ -47,6 +59,7 @@ export function CACTable() {
       })),
       "cac-analysis"
     );
+    toast("CSV exported successfully");
   };
 
   return (
@@ -59,6 +72,13 @@ export function CACTable() {
         </Button>
       </CardHeader>
       <CardContent>
+        {data.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-12 text-center">
+            <Search className="h-10 w-10 text-muted-foreground/40 mb-3" />
+            <p className="text-sm font-medium text-muted-foreground">No data matches your current filters</p>
+            <p className="text-xs text-muted-foreground/70 mt-1">Try adjusting your filters or selecting a different time range</p>
+          </div>
+        ) : (
         <div className="overflow-x-auto">
           <table className="w-full text-sm" role="table">
             <thead>
@@ -141,7 +161,9 @@ export function CACTable() {
             </tbody>
           </table>
         </div>
+        )}
       </CardContent>
+
     </Card>
   );
 }

@@ -20,6 +20,7 @@ import {
   filterChartDataByTimeRange,
 } from "@/lib/utils/filters";
 import { useDashboardStore } from "@/stores/dashboard-store";
+import { Search } from "lucide-react";
 
 interface TooltipProps {
   active?: boolean;
@@ -89,42 +90,50 @@ export function NewVsRepeatChart() {
         <CardTitle className="text-lg">New vs Returning Customers</CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="h-[350px]" role="img" aria-label="Area chart showing new vs returning customers over time">
-          <ResponsiveContainer width="100%" height="100%">
-            <AreaChart data={data} margin={{ top: 5, right: 20, bottom: 5, left: 10 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-              <XAxis
-                dataKey="month"
-                tick={{ fontSize: 12 }}
-              />
-              <YAxis
-                tick={{ fontSize: 12 }}
-              />
-              <Tooltip content={<CustomTooltip />} />
-              <Legend wrapperStyle={{ fontSize: 12, paddingTop: 8 }} />
-              <Area
-                type="monotone"
-                dataKey="returning_customers"
-                name="Returning Customers"
-                stackId="1"
-                stroke="rgba(26, 43, 74, 0.35)"
-                fill="rgba(26, 43, 74, 0.35)"
-                fillOpacity={0.15}
-                strokeWidth={2}
-              />
-              <Area
-                type="monotone"
-                dataKey="new_customers"
-                name="New Customers"
-                stackId="1"
-                stroke={CHART_COLORS.brand}
-                fill={CHART_COLORS.brand}
-                fillOpacity={0.15}
-                strokeWidth={2}
-              />
-            </AreaChart>
-          </ResponsiveContainer>
-        </div>
+        {data.length === 0 ? (
+          <div className="flex flex-col items-center justify-center h-[350px] text-center">
+            <Search className="h-10 w-10 text-muted-foreground/40 mb-3" />
+            <p className="text-sm font-medium text-muted-foreground">No data matches your current filters</p>
+            <p className="text-xs text-muted-foreground/70 mt-1">Try adjusting your filters or selecting a different time range</p>
+          </div>
+        ) : (
+          <div className="h-[350px]" role="img" aria-label="Area chart showing new vs returning customers over time">
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart data={data} margin={{ top: 5, right: 20, bottom: 5, left: 10 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                <XAxis
+                  dataKey="month"
+                  tick={{ fontSize: 12 }}
+                />
+                <YAxis
+                  tick={{ fontSize: 12 }}
+                />
+                <Tooltip content={<CustomTooltip />} />
+                <Legend wrapperStyle={{ fontSize: 12, paddingTop: 8 }} />
+                <Area
+                  type="monotone"
+                  dataKey="returning_customers"
+                  name="Returning Customers"
+                  stackId="1"
+                  stroke="rgba(26, 43, 74, 0.35)"
+                  fill="rgba(26, 43, 74, 0.35)"
+                  fillOpacity={0.15}
+                  strokeWidth={2}
+                />
+                <Area
+                  type="monotone"
+                  dataKey="new_customers"
+                  name="New Customers"
+                  stackId="1"
+                  stroke={CHART_COLORS.brand}
+                  fill={CHART_COLORS.brand}
+                  fillOpacity={0.15}
+                  strokeWidth={2}
+                />
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
+        )}
       </CardContent>
     </Card>
   );

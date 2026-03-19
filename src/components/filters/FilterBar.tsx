@@ -10,7 +10,7 @@ import {
 import { useDashboardStore } from "@/stores/dashboard-store";
 import { Button } from "@/components/ui/button";
 import { RotateCcw } from "lucide-react";
-import type { Channel, ProductCategory, CustomerType, AdsPlatform } from "@/types";
+import type { Channel, ProductCategory, CustomerType, AdsPlatform, TimeRange } from "@/types";
 
 export function FilterBar() {
   const { filters, setFilter, resetFilters } = useDashboardStore();
@@ -20,7 +20,8 @@ export function FilterBar() {
     filters.category !== "all" ||
     filters.customerType !== "all" ||
     filters.adsPlatform !== "all" ||
-    filters.selectedMonth !== "2026-03";
+    filters.selectedMonth !== "2026-03" ||
+    filters.timeRange !== "6m";
 
   return (
     <div className="flex flex-wrap items-end gap-4 rounded-lg border border-border/30 bg-card p-3">
@@ -42,6 +43,23 @@ export function FilterBar() {
             <SelectItem value="2026-04">Apr 2026</SelectItem>
             <SelectItem value="2026-05">May 2026</SelectItem>
             <SelectItem value="2026-06">Jun 2026</SelectItem>
+          </SelectContent>
+        </Select>
+      </FilterGroup>
+
+      <FilterGroup label="Time Range">
+        <Select
+          value={filters.timeRange}
+          onValueChange={(v) => setFilter("timeRange", v as TimeRange)}
+        >
+          <SelectTrigger className="w-[100px] h-8 text-xs">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="3m">3 Months</SelectItem>
+            <SelectItem value="6m">6 Months</SelectItem>
+            <SelectItem value="12m">12 Months</SelectItem>
+            <SelectItem value="ytd">YTD</SelectItem>
           </SelectContent>
         </Select>
       </FilterGroup>

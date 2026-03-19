@@ -6,8 +6,9 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { MOCK_AD_SPEND_TABLE } from "@/lib/mock-data";
 import { formatCurrency, formatPercent, formatMonth, exportToCSV } from "@/lib/utils";
-import { Download } from "lucide-react";
+import { Download, Search } from "lucide-react";
 import { useDashboardStore } from "@/stores/dashboard-store";
+import { useToast } from "@/components/ui/toast";
 import {
   getMonthsForTimeRange,
   filterAdSpendByPlatform,
@@ -16,6 +17,7 @@ import {
 
 export function AdSpendTable() {
   const { filters } = useDashboardStore();
+  const { toast } = useToast();
 
   const data = useMemo(() => {
     const months = getMonthsForTimeRange(filters.selectedMonth, filters.timeRange);
@@ -37,6 +39,7 @@ export function AdSpendTable() {
       })),
       "ad-spend-vs-budget"
     );
+    toast("CSV exported successfully");
   };
 
   const uniqueMonths = [...new Set(data.map((d) => d.month))];
@@ -51,6 +54,13 @@ export function AdSpendTable() {
         </Button>
       </CardHeader>
       <CardContent>
+        {data.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-12 text-center">
+            <Search className="h-10 w-10 text-muted-foreground/40 mb-3" />
+            <p className="text-sm font-medium text-muted-foreground">No data matches your current filters</p>
+            <p className="text-xs text-muted-foreground/70 mt-1">Try adjusting your filters or selecting a different time range</p>
+          </div>
+        ) : (
         <div className="overflow-x-auto">
           <table className="w-full text-sm" role="table">
             <thead>
@@ -128,6 +138,7 @@ export function AdSpendTable() {
             </tbody>
           </table>
         </div>
+        )}
       </CardContent>
     </Card>
   );

@@ -10,19 +10,19 @@ Data fallback chain: Supabase → Shopify → Mock data.
 ## Phase 1: Critical Bugs (Data Pipeline Broken)
 
 ### Task 1.1 — Fix live data field mismatches
-- [ ] `ForecastTable.tsx` expects `liveForecast.rows` but `/api/forecast` returns `{ data: [...] }` → fix field name
-- [ ] `KPIBar.tsx` expects `liveKPI.totalRevenue` from `/api/shopify/orders?summary=true` but that route returns raw orders → create `/api/kpi` route OR add summary logic to orders route
-- [ ] `SKUTable.tsx` fetches from `/api/shopify/inventory` which does NOT exist (404) → create the route using `getProducts()` + `getOrders()` from Shopify client
+- [x] `ForecastTable.tsx` expects `liveForecast.rows` but `/api/forecast` returns `{ data: [...] }` → fix field name
+- [x] `KPIBar.tsx` expects `liveKPI.totalRevenue` from `/api/shopify/orders?summary=true` but that route returns raw orders → create `/api/kpi` route OR add summary logic to orders route
+- [x] `SKUTable.tsx` fetches from `/api/shopify/inventory` which does NOT exist (404) → create the route using `getProducts()` + `getOrders()` from Shopify client
 
 ### Task 1.2 — Fix customerType filter (wired in UI but never applied)
-- [ ] `customerType` filter exists in FilterBar and store but NO table/chart uses it
-- [ ] Wire it to `NewVsRepeatChart.tsx` to filter by new/returning
-- [ ] Wire it to `CACTable.tsx` to show only new or returning CAC
+- [x] `customerType` filter exists in FilterBar and store but NO table/chart uses it
+- [x] Wire it to `NewVsRepeatChart.tsx` to filter by new/returning
+- [x] Wire it to `CACTable.tsx` to show only new or returning CAC
 
 ### Task 1.3 — Expose timeRange filter in UI
-- [ ] `timeRange` exists in store (defaults "6m") but FilterBar never shows it
-- [ ] Add a time range selector (3m / 6m / 12m / YTD) to FilterBar
-- [ ] Verify all tables and charts respond to timeRange changes
+- [x] `timeRange` exists in store (defaults "6m") but FilterBar never shows it
+- [x] Add a time range selector (3m / 6m / 12m / YTD) to FilterBar
+- [x] Verify all tables and charts respond to timeRange changes
 
 ---
 

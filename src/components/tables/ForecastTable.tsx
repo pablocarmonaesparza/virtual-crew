@@ -1,16 +1,18 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useRef } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { MOCK_FORECAST_TABLE } from "@/lib/mock-data";
-import { formatNumber, formatPercent, formatMonth, exportToCSV } from "@/lib/utils";
-import { Download, ArrowUpDown } from "lucide-react";
+import { formatNumber, formatMonth, exportToCSV } from "@/lib/utils";
+import { Download, ArrowUpDown, FileDown, Search } from "lucide-react";
 import { useDashboardStore } from "@/stores/dashboard-store";
 import { getMonthsForTimeRange, filterForecastByTimeRange } from "@/lib/utils/filters";
+import { exportToPDF } from "@/lib/utils/pdf";
+import { useToast } from "@/components/ui/toast";
 
 type SortKey = "month" | "forecast_baseline" | "actual" | "accuracy_pct";
 
@@ -18,6 +20,8 @@ export function ForecastTable() {
   const { filters, shopifyConnected } = useDashboardStore();
   const [sortKey, setSortKey] = useState<SortKey>("month");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
+  const { toast } = useToast();
+  const tableRef = useRef<HTMLDivElement>(null);
 
   // Fetch live forecast data when Shopify is connected
   const { data: liveForecast, isLoading: isLiveLoading } = useQuery({
@@ -43,7 +47,7 @@ export function ForecastTable() {
   }, [filters.selectedMonth, filters.timeRange]);
 
   // Use live data if available, otherwise fall back to mock
-  const filteredData = liveForecast?.rows ?? mockFilteredData;
+  const filteredData = liveForecast?.data ?? mockFilteredData;
   const isLoading = shopifyConnected && isLiveLoading;
 
   const data = [...filteredData].sort((a: Record<string, unknown>, b: Record<string, unknown>) => {
@@ -80,6 +84,17 @@ export function ForecastTable() {
       })),
       "forecast-vs-actual"
     );
+    toast("CSV exported successfully");
+  };
+
+  const handlePDFExport = async () => {
+    if (!tableRef.current) return;
+    try {
+      await exportToPDF(tableRef.current, "forecast-vs-actual");
+      toast("PDF exported successfully");
+    } catch {
+      toast("Failed to export PDF", "error");
+    }
   };
 
   const SortHeader = ({ label, field }: { label: string; field: SortKey }) => (
@@ -96,10 +111,16 @@ export function ForecastTable() {
     <Card>
       <CardHeader className="flex flex-row items-center justify-between pb-4">
         <CardTitle className="text-lg">Forecast vs Actual</CardTitle>
-        <Button variant="outline" size="sm" onClick={handleExport}>
-          <Download className="mr-2 h-3 w-3" />
-          CSV
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="outline" size="sm" onClick={handlePDFExport}>
+            <FileDown className="mr-2 h-3 w-3" />
+            PDF
+          </Button>
+          <Button variant="outline" size="sm" onClick={handleExport}>
+            <Download className="mr-2 h-3 w-3" />
+            CSV
+          </Button>
+        </div>
       </CardHeader>
       <CardContent>
         {isLoading ? (
@@ -108,8 +129,14 @@ export function ForecastTable() {
               <Skeleton key={i} className="h-10 w-full" />
             ))}
           </div>
+        ) : data.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-12 text-center">
+            <Search className="h-10 w-10 text-muted-foreground/40 mb-3" />
+            <p className="text-sm font-medium text-muted-foreground">No data matches your current filters</p>
+            <p className="text-xs text-muted-foreground/70 mt-1">Try adjusting your filters or selecting a different time range</p>
+          </div>
         ) : (
-          <div className="overflow-x-auto">
+          <div ref={tableRef} className="overflow-x-auto">
             <table className="w-full text-sm" role="table">
               <thead>
                 <tr className="border-b border-border/40">

@@ -21,6 +21,7 @@ import {
   filterChartDataByTimeRange,
 } from "@/lib/utils/filters";
 import { useDashboardStore } from "@/stores/dashboard-store";
+import { Search } from "lucide-react";
 
 interface CACTooltipProps {
   active?: boolean;
@@ -67,6 +68,13 @@ export function CACChart() {
         <CardTitle className="text-lg">CAC Trend vs New Customers</CardTitle>
       </CardHeader>
       <CardContent>
+        {data.length === 0 ? (
+          <div className="flex flex-col items-center justify-center h-[350px] text-center">
+            <Search className="h-10 w-10 text-muted-foreground/40 mb-3" />
+            <p className="text-sm font-medium text-muted-foreground">No data matches your current filters</p>
+            <p className="text-xs text-muted-foreground/70 mt-1">Try adjusting your filters or selecting a different time range</p>
+          </div>
+        ) : (
         <div className="h-[350px]" role="img" aria-label="Dual-axis chart showing CAC trend and new customer count">
           <ResponsiveContainer width="100%" height="100%">
             <ComposedChart data={data} margin={{ top: 5, right: 20, bottom: 5, left: 10 }}>
@@ -110,6 +118,7 @@ export function CACChart() {
             </ComposedChart>
           </ResponsiveContainer>
         </div>
+        )}
       </CardContent>
     </Card>
   );

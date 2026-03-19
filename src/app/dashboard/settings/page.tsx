@@ -487,6 +487,28 @@ export default function SettingsPage() {
 
   const n8nUrl = status?.n8n?.url || "https://pblcrmn.app.n8n.cloud";
 
+  const handleExportSyncLogs = () => {
+    if (syncLogs.length === 0) {
+      toast("No sync logs to export", "info");
+      return;
+    }
+    exportToCSV(
+      syncLogs.map((log) => ({
+        "Workflow": log.workflow_name,
+        "Source": log.source,
+        "Status": log.status,
+        "Records Fetched": log.records_fetched,
+        "Records Inserted": log.records_inserted,
+        "Records Updated": log.records_updated,
+        "Error": log.error_message ?? "",
+        "Started At": log.started_at,
+        "Completed At": log.completed_at ?? "",
+      })),
+      "sync-logs"
+    );
+    toast("Sync logs exported successfully");
+  };
+
   return (
     <div className="space-y-8 max-w-4xl">
       <div>
@@ -593,6 +615,7 @@ export default function SettingsPage() {
                 <OtherIntegrationCard
                   integration={integration}
                   isConfigured={integrationConfigured[integration.name]}
+                  onConfigure={() => setConfigureModal(integration.name)}
                 />
               )}
             </div>
@@ -631,7 +654,7 @@ export default function SettingsPage() {
                   <p className="text-xs text-muted-foreground">Download forecast, ad spend, and CAC data as CSV</p>
                 </div>
               </div>
-              <Button variant="outline" size="sm" className="h-7 text-xs">
+              <Button variant="outline" size="sm" className="h-7 text-xs" onClick={handleExportSyncLogs}>
                 <Download className="mr-1.5 h-3 w-3" />
                 Export CSV
               </Button>
@@ -688,6 +711,11 @@ export default function SettingsPage() {
           </CardContent>
         </Card>
       </section>
+
+      {/* Configure Modal */}
+      {configureModal && (
+        <ConfigureModal name={configureModal} onClose={() => setConfigureModal(null)} />
+      )}
     </div>
   );
 }

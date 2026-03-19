@@ -20,6 +20,7 @@ import {
   filterChartDataByTimeRange,
 } from "@/lib/utils/filters";
 import { useDashboardStore } from "@/stores/dashboard-store";
+import { Search } from "lucide-react";
 
 interface AdSpendTooltipProps {
   active?: boolean;
@@ -66,6 +67,13 @@ export function AdSpendChart() {
         <CardTitle className="text-lg">Ad Spend — Actual vs Budget</CardTitle>
       </CardHeader>
       <CardContent>
+        {data.length === 0 ? (
+          <div className="flex flex-col items-center justify-center h-[350px] text-center">
+            <Search className="h-10 w-10 text-muted-foreground/40 mb-3" />
+            <p className="text-sm font-medium text-muted-foreground">No data matches your current filters</p>
+            <p className="text-xs text-muted-foreground/70 mt-1">Try adjusting your filters or selecting a different time range</p>
+          </div>
+        ) : (
         <div className="h-[350px]" role="img" aria-label="Ad spend grouped bar chart showing actual vs budget">
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={data} margin={{ top: 5, right: 20, bottom: 5, left: 10 }}>
@@ -95,6 +103,7 @@ export function AdSpendChart() {
             </BarChart>
           </ResponsiveContainer>
         </div>
+        )}
       </CardContent>
     </Card>
   );
