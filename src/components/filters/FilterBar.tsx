@@ -11,9 +11,11 @@ import { useDashboardStore } from "@/stores/dashboard-store";
 import { Button } from "@/components/ui/button";
 import { RotateCcw } from "lucide-react";
 import type { Channel, ProductCategory, CustomerType, AdsPlatform, TimeRange } from "@/types";
+import { useToast } from "@/components/ui/toast";
 
 export function FilterBar() {
   const { filters, setFilter, resetFilters } = useDashboardStore();
+  const { toast } = useToast();
 
   const hasActiveFilters =
     filters.channel !== "all" ||
@@ -133,7 +135,7 @@ export function FilterBar() {
         <Button
           variant="ghost"
           size="sm"
-          onClick={resetFilters}
+          onClick={() => { resetFilters(); toast("Filters reset", "info"); }}
           className="h-8 text-xs text-muted-foreground hover:text-foreground"
         >
           <RotateCcw className="mr-1 h-3 w-3" />
