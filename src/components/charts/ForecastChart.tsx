@@ -1,20 +1,25 @@
 "use client";
 
+import { useMemo } from "react";
 import {
   ResponsiveContainer,
   ComposedChart,
   Line,
-  Area,
   XAxis,
   YAxis,
   CartesianGrid,
   Tooltip,
   Legend,
-  ReferenceLine,
 } from "recharts";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { MOCK_CHART_DATA } from "@/lib/mock-data";
 import { formatNumber } from "@/lib/utils";
+import { CHART_COLORS } from "@/lib/utils/colors";
+import {
+  getMonthsForTimeRange,
+  filterChartDataByTimeRange,
+} from "@/lib/utils/filters";
+import { useDashboardStore } from "@/stores/dashboard-store";
 
 interface ForecastTooltipProps {
   active?: boolean;
@@ -32,20 +37,20 @@ function CustomTooltip({ active, payload, label }: ForecastTooltipProps) {
   const gap = baseline && actual ? actual - baseline : null;
 
   return (
-    <div className="rounded-lg border bg-white p-3 shadow-lg text-sm">
+    <div className="rounded-lg border bg-card text-card-foreground p-3 shadow-lg text-sm">
       <p className="font-semibold font-heading mb-2">{label}</p>
       <div className="space-y-1">
         <div className="flex justify-between gap-4">
           <span className="text-muted-foreground">Baseline:</span>
-          <span className="font-medium tabular-nums">{baseline ? formatNumber(baseline) : "—"}</span>
+          <span className="font-medium tabular-nums">{baseline ? formatNumber(baseline) : "\u2014"}</span>
         </div>
         <div className="flex justify-between gap-4">
           <span className="text-muted-foreground">Ambitious:</span>
-          <span className="font-medium tabular-nums">{ambitious ? formatNumber(ambitious) : "—"}</span>
+          <span className="font-medium tabular-nums">{ambitious ? formatNumber(ambitious) : "\u2014"}</span>
         </div>
         <div className="flex justify-between gap-4">
           <span className="text-muted-foreground">Actual:</span>
-          <span className="font-medium tabular-nums">{actual ? formatNumber(actual) : "—"}</span>
+          <span className="font-medium tabular-nums">{actual ? formatNumber(actual) : "\u2014"}</span>
         </div>
         {accuracy && (
           <div className="flex justify-between gap-4 pt-1 border-t mt-1">
@@ -69,7 +74,12 @@ function CustomTooltip({ active, payload, label }: ForecastTooltipProps) {
 }
 
 export function ForecastChart() {
-  const data = MOCK_CHART_DATA.forecastVsActual;
+  const { timeRange, selectedMonth } = useDashboardStore((s) => s.filters);
+
+  const data = useMemo(() => {
+    const months = getMonthsForTimeRange(selectedMonth, timeRange);
+    return filterChartDataByTimeRange(MOCK_CHART_DATA.forecastVsActual, months);
+  }, [selectedMonth, timeRange]);
 
   return (
     <Card>
@@ -80,47 +90,44 @@ export function ForecastChart() {
         <div className="h-[350px]" role="img" aria-label="Forecast vs Actual line chart showing units by month">
           <ResponsiveContainer width="100%" height="100%">
             <ComposedChart data={data} margin={{ top: 5, right: 20, bottom: 5, left: 10 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+              <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
               <XAxis
                 dataKey="month"
-                tick={{ fontSize: 12, fontFamily: "Inter" }}
-                stroke="#94a3b8"
+                tick={{ fontSize: 12 }}
               />
               <YAxis
-                tick={{ fontSize: 12, fontFamily: "Inter" }}
-                stroke="#94a3b8"
+                tick={{ fontSize: 12 }}
                 tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`}
               />
               <Tooltip content={<CustomTooltip />} />
               <Legend
-                wrapperStyle={{ fontSize: 12, fontFamily: "Inter", paddingTop: 8 }}
+                wrapperStyle={{ fontSize: 12, paddingTop: 8 }}
               />
               <Line
                 type="monotone"
                 dataKey="baseline"
                 name="Baseline"
-                stroke="#1a2b4a"
+                stroke={CHART_COLORS.brandLight}
                 strokeWidth={2}
-                dot={{ r: 4, fill: "#1a2b4a" }}
+                dot={{ r: 4, fill: CHART_COLORS.brandLight }}
                 activeDot={{ r: 6 }}
               />
               <Line
                 type="monotone"
                 dataKey="ambitious"
                 name="Ambitious"
-                stroke="#1a2b4a"
+                stroke={CHART_COLORS.brand}
                 strokeWidth={2}
                 strokeDasharray="8 4"
-                dot={{ r: 3, fill: "#1a2b4a", strokeDasharray: "0" }}
-                opacity={0.5}
+                dot={{ r: 3, fill: CHART_COLORS.brand, strokeDasharray: "0" }}
               />
               <Line
                 type="monotone"
                 dataKey="actual"
                 name="Actual"
-                stroke="#22c55e"
+                stroke={CHART_COLORS.actual}
                 strokeWidth={2.5}
-                dot={{ r: 4, fill: "#22c55e" }}
+                dot={{ r: 4, fill: CHART_COLORS.actual }}
                 activeDot={{ r: 6 }}
                 connectNulls={false}
               />

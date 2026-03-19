@@ -8,36 +8,28 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useDashboardStore } from "@/stores/dashboard-store";
+import { Button } from "@/components/ui/button";
+import { RotateCcw } from "lucide-react";
 import type { Channel, ProductCategory, CustomerType, AdsPlatform } from "@/types";
 
 export function FilterBar() {
-  const { filters, setFilter } = useDashboardStore();
+  const { filters, setFilter, resetFilters } = useDashboardStore();
+
+  const hasActiveFilters =
+    filters.channel !== "all" ||
+    filters.category !== "all" ||
+    filters.customerType !== "all" ||
+    filters.adsPlatform !== "all" ||
+    filters.selectedMonth !== "2026-03";
 
   return (
-    <div className="flex flex-wrap items-center gap-3 rounded-lg border bg-white p-4">
-      <div className="flex items-center gap-2">
-        <label className="text-sm font-medium text-muted-foreground whitespace-nowrap">
-          Client
-        </label>
-        <Select value="adm" disabled>
-          <SelectTrigger className="w-[180px]">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="adm">Agua de Madre</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
-
-      <div className="flex items-center gap-2">
-        <label className="text-sm font-medium text-muted-foreground whitespace-nowrap">
-          Month
-        </label>
+    <div className="flex flex-wrap items-end gap-4 rounded-lg border border-border/30 bg-card p-3">
+      <FilterGroup label="Month">
         <Select
           value={filters.selectedMonth}
           onValueChange={(v) => setFilter("selectedMonth", v)}
         >
-          <SelectTrigger className="w-[140px]">
+          <SelectTrigger className="w-[130px] h-8 text-xs">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
@@ -52,17 +44,14 @@ export function FilterBar() {
             <SelectItem value="2026-06">Jun 2026</SelectItem>
           </SelectContent>
         </Select>
-      </div>
+      </FilterGroup>
 
-      <div className="flex items-center gap-2">
-        <label className="text-sm font-medium text-muted-foreground whitespace-nowrap">
-          Channel
-        </label>
+      <FilterGroup label="Channel">
         <Select
           value={filters.channel}
           onValueChange={(v) => setFilter("channel", v as Channel)}
         >
-          <SelectTrigger className="w-[140px]">
+          <SelectTrigger className="w-[130px] h-8 text-xs">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
@@ -71,17 +60,14 @@ export function FilterBar() {
             <SelectItem value="amazon">Amazon</SelectItem>
           </SelectContent>
         </Select>
-      </div>
+      </FilterGroup>
 
-      <div className="flex items-center gap-2">
-        <label className="text-sm font-medium text-muted-foreground whitespace-nowrap">
-          Category
-        </label>
+      <FilterGroup label="Category">
         <Select
           value={filters.category}
           onValueChange={(v) => setFilter("category", v as ProductCategory)}
         >
-          <SelectTrigger className="w-[160px]">
+          <SelectTrigger className="w-[140px] h-8 text-xs">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
@@ -91,17 +77,14 @@ export function FilterBar() {
             <SelectItem value="health_products">Health Products</SelectItem>
           </SelectContent>
         </Select>
-      </div>
+      </FilterGroup>
 
-      <div className="flex items-center gap-2">
-        <label className="text-sm font-medium text-muted-foreground whitespace-nowrap">
-          Customer
-        </label>
+      <FilterGroup label="Customer">
         <Select
           value={filters.customerType}
           onValueChange={(v) => setFilter("customerType", v as CustomerType)}
         >
-          <SelectTrigger className="w-[140px]">
+          <SelectTrigger className="w-[120px] h-8 text-xs">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
@@ -110,17 +93,14 @@ export function FilterBar() {
             <SelectItem value="returning">Returning</SelectItem>
           </SelectContent>
         </Select>
-      </div>
+      </FilterGroup>
 
-      <div className="flex items-center gap-2">
-        <label className="text-sm font-medium text-muted-foreground whitespace-nowrap">
-          Ads
-        </label>
+      <FilterGroup label="Ads Platform">
         <Select
           value={filters.adsPlatform}
           onValueChange={(v) => setFilter("adsPlatform", v as AdsPlatform)}
         >
-          <SelectTrigger className="w-[150px]">
+          <SelectTrigger className="w-[130px] h-8 text-xs">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
@@ -129,7 +109,36 @@ export function FilterBar() {
             <SelectItem value="amazon_ads">Amazon Ads</SelectItem>
           </SelectContent>
         </Select>
-      </div>
+      </FilterGroup>
+
+      {hasActiveFilters && (
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={resetFilters}
+          className="h-8 text-xs text-muted-foreground hover:text-foreground"
+        >
+          <RotateCcw className="mr-1 h-3 w-3" />
+          Reset
+        </Button>
+      )}
+    </div>
+  );
+}
+
+function FilterGroup({
+  label,
+  children,
+}: {
+  label: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="flex flex-col gap-1">
+      <span className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground/70">
+        {label}
+      </span>
+      {children}
     </div>
   );
 }

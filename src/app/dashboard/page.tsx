@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect } from "react";
 import { FilterBar } from "@/components/filters/FilterBar";
 import { KPIBar } from "@/components/kpi/KPIBar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -12,7 +13,7 @@ import { AdSpendChart } from "@/components/charts/AdSpendChart";
 import { CACChart } from "@/components/charts/CACChart";
 import { NewVsRepeatChart } from "@/components/charts/NewVsRepeatChart";
 import { RecommendationsPanel } from "@/components/recommendations/RecommendationsPanel";
-import { ChatPanel } from "@/components/chat/ChatPanel";
+import { DataSourceIndicator } from "@/components/layout/DataSourceIndicator";
 import { useDashboardStore } from "@/stores/dashboard-store";
 import {
   BarChart3,
@@ -23,12 +24,37 @@ import {
 } from "lucide-react";
 
 export default function DashboardPage() {
-  const { activeTab, setActiveTab } = useDashboardStore();
+  const { activeTab, setActiveTab, setShopifyConnected, setShopifyStoreName } =
+    useDashboardStore();
+
+  // Check Shopify connection on mount so the indicator is accurate
+  useEffect(() => {
+    async function checkStatus() {
+      try {
+        const res = await fetch("/api/shopify/status");
+        if (res.ok) {
+          const data = await res.json();
+          if (data.connected) {
+            setShopifyConnected(true);
+            if (data.shop) setShopifyStoreName(data.shop);
+          }
+        }
+      } catch {
+        // API not available — stay in mock mode
+      }
+    }
+    checkStatus();
+  }, [setShopifyConnected, setShopifyStoreName]);
 
   return (
-    <div className="space-y-6">
-      <FilterBar />
-      <KPIBar />
+    <div className="space-y-5">
+      <div className="flex items-center gap-3">
+        <KPIBar />
+      </div>
+      <div className="flex items-center justify-between gap-4">
+        <FilterBar />
+        <DataSourceIndicator />
+      </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList className="grid w-full grid-cols-5 lg:w-auto lg:inline-grid">
@@ -84,8 +110,6 @@ export default function DashboardPage() {
           <RecommendationsPanel />
         </TabsContent>
       </Tabs>
-
-      <ChatPanel />
     </div>
   );
 }

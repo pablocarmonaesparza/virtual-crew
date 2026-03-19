@@ -14,6 +14,17 @@ interface DashboardState {
   setIsRunning: (running: boolean) => void;
   activeTab: string;
   setActiveTab: (tab: string) => void;
+  isSidebarOpen: boolean;
+  toggleSidebar: () => void;
+  setSidebarOpen: (open: boolean) => void;
+  theme: "light" | "dark";
+  toggleTheme: () => void;
+  shopifyConnected: boolean;
+  setShopifyConnected: (connected: boolean) => void;
+  shopifyStoreName: string;
+  setShopifyStoreName: (name: string) => void;
+  dataSource: "mock" | "live";
+  setDataSource: (source: "mock" | "live") => void;
 }
 
 const defaultFilters: DashboardFilters = {
@@ -40,4 +51,30 @@ export const useDashboardStore = create<DashboardState>((set) => ({
   setIsRunning: (running) => set({ isRunning: running }),
   activeTab: "forecast",
   setActiveTab: (tab) => set({ activeTab: tab }),
+  isSidebarOpen: true,
+  toggleSidebar: () => set((state) => ({ isSidebarOpen: !state.isSidebarOpen })),
+  setSidebarOpen: (open) => set({ isSidebarOpen: open }),
+  theme:
+    typeof window !== "undefined"
+      ? ((localStorage.getItem("theme") as "light" | "dark") || "light")
+      : "light",
+  toggleTheme: () =>
+    set((state) => {
+      const newTheme = state.theme === "light" ? "dark" : "light";
+      if (typeof window !== "undefined") {
+        localStorage.setItem("theme", newTheme);
+        document.documentElement.classList.toggle("dark", newTheme === "dark");
+      }
+      return { theme: newTheme };
+    }),
+  shopifyConnected: false,
+  setShopifyConnected: (connected) =>
+    set({
+      shopifyConnected: connected,
+      dataSource: connected ? "live" : "mock",
+    }),
+  shopifyStoreName: "",
+  setShopifyStoreName: (name) => set({ shopifyStoreName: name }),
+  dataSource: "mock",
+  setDataSource: (source) => set({ dataSource: source }),
 }));

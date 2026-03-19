@@ -1,14 +1,28 @@
 "use client";
 
+import { useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { MOCK_AD_SPEND_TABLE } from "@/lib/mock-data";
 import { formatCurrency, formatPercent, formatMonth, exportToCSV } from "@/lib/utils";
 import { Download } from "lucide-react";
+import { useDashboardStore } from "@/stores/dashboard-store";
+import {
+  getMonthsForTimeRange,
+  filterAdSpendByPlatform,
+  filterAdSpendByTimeRange,
+} from "@/lib/utils/filters";
 
 export function AdSpendTable() {
-  const data = MOCK_AD_SPEND_TABLE;
+  const { filters } = useDashboardStore();
+
+  const data = useMemo(() => {
+    const months = getMonthsForTimeRange(filters.selectedMonth, filters.timeRange);
+    let filtered = filterAdSpendByTimeRange(MOCK_AD_SPEND_TABLE, months);
+    filtered = filterAdSpendByPlatform(filtered, filters.adsPlatform);
+    return filtered;
+  }, [filters.selectedMonth, filters.timeRange, filters.adsPlatform]);
 
   const handleExport = () => {
     exportToCSV(
@@ -40,7 +54,7 @@ export function AdSpendTable() {
         <div className="overflow-x-auto">
           <table className="w-full text-sm" role="table">
             <thead>
-              <tr className="border-b">
+              <tr className="border-b border-border/40">
                 <th className="pb-3 text-left">
                   <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Month</span>
                 </th>
@@ -70,8 +84,8 @@ export function AdSpendTable() {
                 return (
                   <tr
                     key={`${row.month}-${row.platform}`}
-                    className={`border-b last:border-0 hover:bg-slate-50/30 transition-colors ${
-                      isFirstOfMonth && i > 0 ? "border-t-2 border-t-slate-200" : ""
+                    className={`border-b border-border/30 last:border-0 hover:bg-muted/30 transition-colors ${
+                      isFirstOfMonth && i > 0 ? "border-t-2 border-t-border/40" : ""
                     }`}
                   >
                     <td className="py-2.5 font-medium">

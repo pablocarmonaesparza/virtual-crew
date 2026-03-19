@@ -1,14 +1,34 @@
 "use client";
 
+import { useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { MOCK_CAC_TABLE } from "@/lib/mock-data";
 import { formatCurrency, formatCurrencyPrecise, formatNumber, formatPercent, formatMonth, exportToCSV } from "@/lib/utils";
 import { Download } from "lucide-react";
+import { useDashboardStore } from "@/stores/dashboard-store";
+import {
+  getMonthsForTimeRange,
+  filterCACByChannel,
+  filterCACByTimeRange,
+} from "@/lib/utils/filters";
 
 export function CACTable() {
-  const data = MOCK_CAC_TABLE;
+  const { filters } = useDashboardStore();
+
+  const data = useMemo(() => {
+    const months = getMonthsForTimeRange(filters.selectedMonth, filters.timeRange);
+    let filtered = filterCACByTimeRange(MOCK_CAC_TABLE, months);
+    filtered = filterCACByChannel(filtered, filters.channel);
+
+    // Filter by customerType: if "new", only show new customer columns meaningfully
+    // if "returning", only show returning customer columns meaningfully
+    // The actual row filtering is not applicable since each row has both new and returning.
+    // Instead we keep all rows but the UI already shows both; the customerType filter
+    // is more relevant for the charts. We keep all rows here for full visibility.
+    return filtered;
+  }, [filters.selectedMonth, filters.timeRange, filters.channel]);
 
   const handleExport = () => {
     exportToCSV(
@@ -42,7 +62,7 @@ export function CACTable() {
         <div className="overflow-x-auto">
           <table className="w-full text-sm" role="table">
             <thead>
-              <tr className="border-b">
+              <tr className="border-b border-border/40">
                 <th className="pb-3 text-left">
                   <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Month</span>
                 </th>
@@ -81,8 +101,8 @@ export function CACTable() {
                 return (
                   <tr
                     key={`${row.month}-${row.channel}`}
-                    className={`border-b last:border-0 hover:bg-slate-50/30 transition-colors ${
-                      isFirstOfMonth && i > 0 ? "border-t-2 border-t-slate-200" : ""
+                    className={`border-b border-border/30 last:border-0 hover:bg-muted/30 transition-colors ${
+                      isFirstOfMonth && i > 0 ? "border-t-2 border-t-border/40" : ""
                     }`}
                   >
                     <td className="py-2.5 font-medium">

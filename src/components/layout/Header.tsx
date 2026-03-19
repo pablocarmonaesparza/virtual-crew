@@ -2,10 +2,11 @@
 
 import { Button } from "@/components/ui/button";
 import { useDashboardStore } from "@/stores/dashboard-store";
-import { Play, MessageCircle, RefreshCw } from "lucide-react";
+import { Play, MessageCircle, RefreshCw, PanelLeft, Sun, Moon } from "lucide-react";
 
 export function Header() {
-  const { isRunning, setIsRunning, toggleChat, isChatOpen } = useDashboardStore();
+  const { isRunning, setIsRunning, toggleChat, isChatOpen, setSidebarOpen, theme, toggleTheme } =
+    useDashboardStore();
 
   const handleRun = () => {
     setIsRunning(true);
@@ -13,36 +14,56 @@ export function Header() {
   };
 
   return (
-    <header className="sticky top-0 z-40 border-b bg-white">
-      <div className="flex h-16 items-center justify-between px-6">
-        <div className="flex items-center gap-4">
-          <div className="flex items-center gap-3">
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-exl-blue">
-              <span className="text-sm font-bold text-white font-heading">EXL</span>
-            </div>
-            <div>
-              <h1 className="text-lg font-semibold font-heading text-exl-blue">
-                S&OP Dashboard
-              </h1>
-              <p className="text-xs text-muted-foreground">Agua de Madre</p>
-            </div>
+    <header className="sticky top-0 z-30 border-b border-border/30 bg-white dark:bg-card">
+      <div className="flex h-14 items-center justify-between px-4 md:px-6">
+        <div className="flex items-center gap-3">
+          {/* Mobile sidebar trigger */}
+          <button
+            onClick={() => setSidebarOpen(true)}
+            className="lg:hidden rounded-md p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+            aria-label="Open navigation"
+          >
+            <PanelLeft className="h-5 w-5" />
+          </button>
+
+          <div>
+            <h1 className="text-base font-semibold font-heading text-foreground">
+              S&OP Dashboard
+            </h1>
+            <p className="text-[11px] text-muted-foreground leading-none">
+              Agua de Madre
+            </p>
           </div>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2">
+          {/* Theme toggle */}
+          <button
+            onClick={toggleTheme}
+            className="rounded-md p-2 text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+            aria-label={theme === "light" ? "Switch to dark mode" : "Switch to light mode"}
+          >
+            {theme === "light" ? (
+              <Moon className="h-4 w-4" />
+            ) : (
+              <Sun className="h-4 w-4" />
+            )}
+          </button>
+
           <Button
             onClick={handleRun}
             disabled={isRunning}
-            className="bg-exl-blue hover:bg-exl-blue-light"
+            size="sm"
+            className="bg-[#1a2b4a] hover:bg-[#2a4270] text-white dark:bg-primary dark:text-primary-foreground dark:hover:bg-primary/90 h-8 text-xs"
           >
             {isRunning ? (
               <>
-                <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
-                Running...
+                <RefreshCw className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+                Running…
               </>
             ) : (
               <>
-                <Play className="mr-2 h-4 w-4" />
+                <Play className="mr-1.5 h-3.5 w-3.5" />
                 Run Analysis
               </>
             )}
@@ -52,12 +73,19 @@ export function Header() {
             size="icon"
             onClick={toggleChat}
             aria-label="Toggle chat"
-            className={isChatOpen ? "bg-exl-blue hover:bg-exl-blue-light" : ""}
+            className={cn(
+              "h-8 w-8",
+              isChatOpen ? "bg-[#1a2b4a] hover:bg-[#2a4270] text-white dark:bg-primary dark:text-primary-foreground" : ""
+            )}
           >
-            <MessageCircle className="h-4 w-4" />
+            <MessageCircle className="h-3.5 w-3.5" />
           </Button>
         </div>
       </div>
     </header>
   );
+}
+
+function cn(...classes: (string | boolean | undefined)[]) {
+  return classes.filter(Boolean).join(" ");
 }

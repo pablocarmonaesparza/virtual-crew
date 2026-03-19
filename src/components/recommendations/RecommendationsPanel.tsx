@@ -39,7 +39,7 @@ export function RecommendationsPanel() {
         </CardHeader>
         <CardContent className="space-y-6">
           <section>
-            <h4 className="text-sm font-semibold text-exl-blue mb-2 flex items-center gap-1.5">
+            <h4 className="text-sm font-semibold text-primary mb-2 flex items-center gap-1.5">
               <Lightbulb className="h-4 w-4" />
               Executive Summary
             </h4>
@@ -51,14 +51,14 @@ export function RecommendationsPanel() {
           <Separator />
 
           <section>
-            <h4 className="text-sm font-semibold text-exl-blue mb-3 flex items-center gap-1.5">
+            <h4 className="text-sm font-semibold text-primary mb-3 flex items-center gap-1.5">
               <TrendingUp className="h-4 w-4" />
               Key Trends
             </h4>
             <ul className="space-y-2">
               {rec.trends.map((trend, i) => (
                 <li key={i} className="flex gap-2 text-sm text-muted-foreground">
-                  <span className="text-exl-blue mt-0.5 shrink-0">•</span>
+                  <span className="text-primary mt-0.5 shrink-0">•</span>
                   {trend}
                 </li>
               ))}
@@ -85,7 +85,7 @@ export function RecommendationsPanel() {
           <Separator />
 
           <section>
-            <h4 className="text-sm font-semibold text-exl-blue mb-3 flex items-center gap-1.5">
+            <h4 className="text-sm font-semibold text-primary mb-3 flex items-center gap-1.5">
               <Target className="h-4 w-4" />
               Actionable Recommendations
             </h4>
@@ -94,7 +94,7 @@ export function RecommendationsPanel() {
                 const config = priorityConfig[r.priority];
                 const Icon = config.icon;
                 return (
-                  <div key={i} className="rounded-lg border p-4 space-y-2">
+                  <div key={i} className="rounded-lg border border-border/30 p-4 space-y-2">
                     <div className="flex items-start justify-between gap-2">
                       <div className="flex items-center gap-2">
                         <Icon className="h-4 w-4 shrink-0" />
@@ -106,7 +106,7 @@ export function RecommendationsPanel() {
                       </div>
                     </div>
                     <p className="text-xs text-muted-foreground pl-6">{r.rationale}</p>
-                    <p className="text-xs font-medium text-exl-blue pl-6">
+                    <p className="text-xs font-medium text-primary pl-6">
                       Expected Impact: {r.expected_impact}
                     </p>
                   </div>
@@ -118,14 +118,14 @@ export function RecommendationsPanel() {
           <Separator />
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <section className="rounded-lg bg-slate-50 p-4">
-              <h4 className="text-sm font-semibold mb-2">vs Baseline Plan</h4>
+            <section className="rounded-lg bg-muted p-4">
+              <h4 className="text-sm font-semibold text-foreground mb-2">vs Baseline Plan</h4>
               <p className="text-xs text-muted-foreground leading-relaxed">
                 {rec.baseline_comparison}
               </p>
             </section>
-            <section className="rounded-lg bg-slate-50 p-4">
-              <h4 className="text-sm font-semibold mb-2">vs Ambitious Plan</h4>
+            <section className="rounded-lg bg-muted p-4">
+              <h4 className="text-sm font-semibold text-foreground mb-2">vs Ambitious Plan</h4>
               <p className="text-xs text-muted-foreground leading-relaxed">
                 {rec.ambitious_comparison}
               </p>

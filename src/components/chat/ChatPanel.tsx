@@ -81,10 +81,10 @@ export function ChatPanel() {
 
   return (
     <Card className="fixed bottom-4 right-4 z-50 w-[400px] max-h-[600px] shadow-2xl flex flex-col">
-      <CardHeader className="flex flex-row items-center justify-between p-4 pb-2 border-b">
+      <CardHeader className="flex flex-row items-center justify-between p-4 pb-2 border-b border-border/30">
         <div className="flex items-center gap-2">
-          <div className="flex h-7 w-7 items-center justify-center rounded-full bg-exl-blue">
-            <Bot className="h-4 w-4 text-white" />
+          <div className="flex h-7 w-7 items-center justify-center rounded-full bg-[#1a2b4a] dark:bg-primary">
+            <Bot className="h-4 w-4 text-white dark:text-primary-foreground" />
           </div>
           <CardTitle className="text-sm">S&OP Assistant</CardTitle>
         </div>
@@ -112,7 +112,7 @@ export function ChatPanel() {
                       setInput(q);
                       inputRef.current?.focus();
                     }}
-                    className="block w-full text-left text-xs text-exl-blue hover:bg-slate-50 rounded-md px-3 py-1.5 transition-colors"
+                    className="block w-full text-left text-xs text-primary hover:bg-muted rounded-md px-3 py-1.5 transition-colors"
                   >
                     {q}
                   </button>
@@ -126,42 +126,42 @@ export function ChatPanel() {
               className={`flex gap-2 ${msg.role === "user" ? "justify-end" : "justify-start"}`}
             >
               {msg.role === "assistant" && (
-                <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-exl-blue/10 mt-0.5">
-                  <Bot className="h-3 w-3 text-exl-blue" />
+                <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary/10 mt-0.5">
+                  <Bot className="h-3 w-3 text-primary" />
                 </div>
               )}
               <div
                 className={`rounded-lg px-3 py-2 text-sm max-w-[280px] ${
                   msg.role === "user"
-                    ? "bg-exl-blue text-white"
-                    : "bg-slate-100 text-foreground"
+                    ? "bg-[#1a2b4a] dark:bg-primary text-white dark:text-primary-foreground"
+                    : "bg-muted text-foreground"
                 }`}
               >
                 {msg.content}
               </div>
               {msg.role === "user" && (
-                <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-slate-200 mt-0.5">
-                  <User className="h-3 w-3 text-slate-600" />
+                <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-muted mt-0.5">
+                  <User className="h-3 w-3 text-muted-foreground" />
                 </div>
               )}
             </div>
           ))}
           {isLoading && (
             <div className="flex gap-2 justify-start">
-              <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-exl-blue/10 mt-0.5">
-                <Bot className="h-3 w-3 text-exl-blue" />
+              <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary/10 mt-0.5">
+                <Bot className="h-3 w-3 text-primary" />
               </div>
-              <div className="rounded-lg bg-slate-100 px-3 py-2">
+              <div className="rounded-lg bg-muted px-3 py-2">
                 <div className="flex gap-1">
-                  <span className="h-1.5 w-1.5 rounded-full bg-slate-400 animate-bounce" style={{ animationDelay: "0ms" }} />
-                  <span className="h-1.5 w-1.5 rounded-full bg-slate-400 animate-bounce" style={{ animationDelay: "150ms" }} />
-                  <span className="h-1.5 w-1.5 rounded-full bg-slate-400 animate-bounce" style={{ animationDelay: "300ms" }} />
+                  <span className="h-1.5 w-1.5 rounded-full bg-muted-foreground/50 animate-bounce" style={{ animationDelay: "0ms" }} />
+                  <span className="h-1.5 w-1.5 rounded-full bg-muted-foreground/50 animate-bounce" style={{ animationDelay: "150ms" }} />
+                  <span className="h-1.5 w-1.5 rounded-full bg-muted-foreground/50 animate-bounce" style={{ animationDelay: "300ms" }} />
                 </div>
               </div>
             </div>
           )}
         </div>
-        <div className="border-t p-3 flex gap-2">
+        <div className="border-t border-border/30 p-3 flex gap-2">
           <input
             ref={inputRef}
             type="text"
@@ -169,13 +169,13 @@ export function ChatPanel() {
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={handleKeyDown}
             placeholder="Ask about your data..."
-            className="flex-1 rounded-md border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-exl-blue/30"
+            className="flex-1 rounded-md border border-border/40 bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
           />
           <Button
             size="icon"
             onClick={handleSend}
             disabled={!input.trim() || isLoading}
-            className="bg-exl-blue hover:bg-exl-blue-light shrink-0"
+            className="bg-[#1a2b4a] hover:bg-[#2a4270] dark:bg-primary dark:hover:bg-primary/90 shrink-0"
           >
             <Send className="h-4 w-4" />
           </Button>
