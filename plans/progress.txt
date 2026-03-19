@@ -1,0 +1,5 @@
+# Ralph Wiggum Progress Log
+# Each iteration appends what was done, what passed, what failed.
+# Format: [Iteration N] [Timestamp] — Summary
+
+--- START ---
