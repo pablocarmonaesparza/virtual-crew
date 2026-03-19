@@ -111,24 +111,24 @@ Data fallback chain: Supabase → Shopify → Mock data.
 
 ---
 
-## Phase 6: Testing & Feedback Loops
+## Phase 6: Testing & Feedback Loops ✅ COMPLETE
 
 ### Task 6.1 — Set up Vitest
-- [ ] Install vitest + @testing-library/react + @testing-library/jest-dom
-- [ ] Create `vitest.config.ts`
-- [ ] Add `"test"` script to package.json
+- [x] Install vitest + @testing-library/react + @testing-library/jest-dom
+- [x] Create `vitest.config.ts`
+- [x] Add `"test"` script to package.json
 
 ### Task 6.2 — Critical path tests
-- [ ] Test data service fallback chain (Supabase → Shopify → Mock)
-- [ ] Test filter utils (filterForecastByTimeRange, filterSKUByCategory, etc.)
-- [ ] Test format utils (formatCurrency, formatPercent, etc.)
-- [ ] Test Shopify transform functions
-- [ ] Test forecast engine calculations
+- [x] Test data service fallback chain (Supabase → Shopify → Mock)
+- [x] Test filter utils (filterForecastByTimeRange, filterSKUByCategory, etc.)
+- [x] Test format utils (formatCurrency, formatPercent, etc.)
+- [x] Test Shopify transform functions
+- [x] Test forecast engine calculations
 
 ### Task 6.3 — Build verification
 - [x] `npm run build` must pass with zero errors
 - [x] `npx tsc --noEmit` must pass with zero type errors
-- [ ] All tests must pass
+- [x] All tests must pass
 
 ---
 
@@ -136,7 +136,7 @@ Data fallback chain: Supabase → Shopify → Mock data.
 - [x] All Phase 1-5 tasks complete
 - [x] `npm run build` passes
 - [x] `npx tsc --noEmit` passes
-- [ ] All tests in Phase 6 pass
+- [x] All tests in Phase 6 pass
 - [x] Dark mode works on every page without hardcoded colors
 - [x] All filters actually filter data in tables AND charts
 - [x] Live data pipeline works when Shopify is connected

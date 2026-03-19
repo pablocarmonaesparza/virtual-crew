@@ -29,3 +29,23 @@ Bonus fixes (pre-existing):
 Build verification:
 - npx tsc --noEmit: PASS (0 errors)
 - npm run build: PASS (compiled successfully, all routes generated)
+
+[Iteration 7] [2026-03-19] — Phase 6 Complete (Testing & Feedback Loops)
+
+Task 6.1 — Set up Vitest:
+- Installed vitest, @testing-library/react, @testing-library/jest-dom, jsdom
+- Created vitest.config.ts with jsdom environment, globals, path alias @/ → ./src
+- Created vitest.setup.ts importing @testing-library/jest-dom
+- Added "test" and "test:watch" scripts to package.json
+
+Task 6.2 — Critical path tests (5 test files, 123 tests):
+- src/__tests__/filters.test.ts: tests for getMonthsForTimeRange (mtd, 3m, 6m, 12m, ytd), filterForecastByTimeRange, filterSKUByCategory, filterAdSpendByPlatform, filterAdSpendByTimeRange, filterCACByChannel, filterCACByTimeRange
+- src/__tests__/format.test.ts: tests for formatCurrency, formatCurrencyPrecise, formatNumber, formatPercent, formatDate, formatMonth, getMonthRange
+- src/__tests__/forecast-engine.test.ts: tests for calculateBaseline, calculateBaselineExponential, getSeasonalityIndex, calculateMarketingUplift, calculatePriceImpact, calculateChannelEffect, generateForecast (determinism, methods, non-negative), calculateAccuracy, calculateGap
+- src/__tests__/data-service.test.ts: mocks Supabase/Shopify as unavailable, tests mock fallback for getForecastData, getSKUData, getKPIData, getAdSpendData, getCACData, getActiveDataSource
+- src/__tests__/shopify-transform.test.ts: tests transformRawOrders (customer type, subscription detection, revenue calc), transformOrdersToForecast, transformOrdersToSKUTable, transformOrdersToKPI, transformCustomersToCAC
+
+Task 6.3 — Build verification:
+- npm test: PASS (5 test files, 123 tests, 0 failures)
+- npm run build: PASS (compiled successfully, all routes generated)
+- PRD Phase 6 marked complete, all success criteria met
