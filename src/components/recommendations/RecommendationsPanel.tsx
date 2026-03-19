@@ -14,6 +14,7 @@ import {
   Sparkles,
 } from "lucide-react";
 import type { LLMRecommendation, RecommendationContent } from "@/types";
+import { AdBudgetSimulator } from "./AdBudgetSimulator";
 
 const priorityConfig = {
   high: { color: "negative" as const, icon: AlertTriangle, label: "High Priority" },
@@ -30,7 +31,7 @@ function RecommendationCard({ recommendation, isLatest }: { recommendation: LLMR
         <div className="flex items-center justify-between">
           <div>
             <CardTitle className="text-lg flex items-center gap-2">
-              AI Recommendations
+              EXL&apos;s Recommendations
               {isLatest && (
                 <Badge className="bg-primary/10 text-primary border-primary/20 text-[10px]">
                   <Sparkles className="h-3 w-3 mr-1" />
@@ -151,6 +152,7 @@ export function RecommendationsPanel() {
 
   return (
     <div className="space-y-6">
+      <AdBudgetSimulator />
       {latestRecommendation && (
         <RecommendationCard recommendation={latestRecommendation} isLatest />
       )}

@@ -76,7 +76,7 @@ export default function DashboardPage() {
           </TabsTrigger>
           <TabsTrigger value="recommendations" className="gap-1.5">
             <Lightbulb className="h-3.5 w-3.5" />
-            <span className="hidden sm:inline">AI Insights</span>
+            <span className="hidden sm:inline">EXL&apos;s Recommendations</span>
           </TabsTrigger>
         </TabsList>
 
