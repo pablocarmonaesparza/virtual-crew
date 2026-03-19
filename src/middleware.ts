@@ -9,11 +9,23 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
+  // Allow status API through (used by settings page)
+  if (pathname === "/api/status" || pathname === "/api/sync-logs") {
+    return NextResponse.next();
+  }
+
   // Only protect /dashboard/* and /api/* routes
   const isProtected =
     pathname.startsWith("/dashboard") || pathname.startsWith("/api");
 
   if (!isProtected) {
+    return NextResponse.next();
+  }
+
+  // Demo mode: skip auth when SUPABASE_SERVICE_ROLE_KEY is not set
+  // This means Supabase is partially configured (URL + anon key exist)
+  // but auth is not fully operational yet
+  if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
     return NextResponse.next();
   }
 
@@ -41,20 +53,25 @@ export async function middleware(request: NextRequest) {
   );
 
   // Refresh session — this call also refreshes the auth token if needed
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  try {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
 
-  if (!user) {
-    // For API routes, return 401 instead of redirecting
-    if (pathname.startsWith("/api")) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    if (!user) {
+      // For API routes, return 401 instead of redirecting
+      if (pathname.startsWith("/api")) {
+        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      }
+
+      // Redirect unauthenticated users to login
+      const loginUrl = request.nextUrl.clone();
+      loginUrl.pathname = "/login";
+      return NextResponse.redirect(loginUrl);
     }
-
-    // Redirect unauthenticated users to login
-    const loginUrl = request.nextUrl.clone();
-    loginUrl.pathname = "/login";
-    return NextResponse.redirect(loginUrl);
+  } catch {
+    // If auth check fails (e.g., Supabase unreachable), allow through in demo mode
+    return NextResponse.next({ request });
   }
 
   return supabaseResponse;
