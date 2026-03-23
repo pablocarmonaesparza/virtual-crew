@@ -3,11 +3,11 @@
 import { cn } from "@/lib/utils/cn";
 import { Button } from "@/components/ui/button";
 import { useDashboardStore } from "@/stores/dashboard-store";
-import { Play, MessageCircle, RefreshCw, PanelLeft, Sun, Moon, Monitor } from "lucide-react";
+import { Play, MessageCircle, RefreshCw, PanelLeft } from "lucide-react";
 import { useToast } from "@/components/ui/toast";
 
 export function Header() {
-  const { isRunning, setIsRunning, toggleChat, isChatOpen, setSidebarOpen, theme, toggleTheme, setLatestRecommendation, setActiveTab } =
+  const { isRunning, setIsRunning, toggleChat, isChatOpen, setSidebarOpen, setLatestRecommendation, setActiveTab } =
     useDashboardStore();
   const { toast } = useToast();
 
@@ -58,27 +58,6 @@ export function Header() {
         </div>
 
         <div className="flex items-center gap-2">
-          {/* Theme toggle */}
-          <button
-            onClick={toggleTheme}
-            className="rounded-md p-2 text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
-            aria-label={
-              theme === "light"
-                ? "Switch to dark mode"
-                : theme === "dark"
-                  ? "Switch to system theme"
-                  : "Switch to light mode"
-            }
-          >
-            {theme === "light" ? (
-              <Sun className="h-4 w-4" />
-            ) : theme === "dark" ? (
-              <Moon className="h-4 w-4" />
-            ) : (
-              <Monitor className="h-4 w-4" />
-            )}
-          </button>
-
           <Button
             onClick={handleRun}
             disabled={isRunning}
