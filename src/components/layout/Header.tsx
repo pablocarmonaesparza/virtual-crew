@@ -3,7 +3,7 @@
 import { cn } from "@/lib/utils/cn";
 import { Button } from "@/components/ui/button";
 import { useDashboardStore } from "@/stores/dashboard-store";
-import { Play, MessageCircle, RefreshCw, PanelLeft, Sun, Moon } from "lucide-react";
+import { Play, MessageCircle, RefreshCw, PanelLeft, Sun, Moon, Monitor } from "lucide-react";
 import { useToast } from "@/components/ui/toast";
 
 export function Header() {
@@ -62,12 +62,20 @@ export function Header() {
           <button
             onClick={toggleTheme}
             className="rounded-md p-2 text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
-            aria-label={theme === "light" ? "Switch to dark mode" : "Switch to light mode"}
+            aria-label={
+              theme === "light"
+                ? "Switch to dark mode"
+                : theme === "dark"
+                  ? "Switch to system theme"
+                  : "Switch to light mode"
+            }
           >
             {theme === "light" ? (
+              <Sun className="h-4 w-4" />
+            ) : theme === "dark" ? (
               <Moon className="h-4 w-4" />
             ) : (
-              <Sun className="h-4 w-4" />
+              <Monitor className="h-4 w-4" />
             )}
           </button>
 

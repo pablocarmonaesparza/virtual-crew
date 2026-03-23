@@ -358,7 +358,7 @@ function SyncLogRow({ log }: { log: SyncLog }) {
 export default function SettingsPage() {
   const {
     theme,
-    toggleTheme,
+    setTheme,
     shopifyConnected,
     setShopifyConnected,
     setShopifyStoreName,
@@ -558,13 +558,13 @@ export default function SettingsPage() {
                 <div>
                   <p className="text-sm font-medium text-foreground">Theme</p>
                   <p className="text-xs text-muted-foreground">
-                    Switch between light and dark mode
+                    Switch between light, dark, or system preference
                   </p>
                 </div>
               </div>
               <div className="flex items-center gap-1 rounded-lg border border-border/30 p-1">
                 <button
-                  onClick={() => { if (theme === "dark") toggleTheme(); }}
+                  onClick={() => setTheme("light")}
                   className={cn(
                     "flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-colors",
                     theme === "light"
@@ -576,7 +576,7 @@ export default function SettingsPage() {
                   Light
                 </button>
                 <button
-                  onClick={() => { if (theme === "light") toggleTheme(); }}
+                  onClick={() => setTheme("dark")}
                   className={cn(
                     "flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-colors",
                     theme === "dark"
@@ -586,6 +586,18 @@ export default function SettingsPage() {
                 >
                   <Moon className="h-3.5 w-3.5" />
                   Dark
+                </button>
+                <button
+                  onClick={() => setTheme("system")}
+                  className={cn(
+                    "flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-colors",
+                    theme === "system"
+                      ? "bg-primary text-primary-foreground"
+                      : "text-muted-foreground hover:text-foreground"
+                  )}
+                >
+                  <Monitor className="h-3.5 w-3.5" />
+                  System
                 </button>
               </div>
             </div>

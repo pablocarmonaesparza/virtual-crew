@@ -17,7 +17,8 @@ interface DashboardState {
   isSidebarOpen: boolean;
   toggleSidebar: () => void;
   setSidebarOpen: (open: boolean) => void;
-  theme: "light" | "dark";
+  theme: "light" | "dark" | "system";
+  setTheme: (theme: "light" | "dark" | "system") => void;
   toggleTheme: () => void;
   shopifyConnected: boolean;
   setShopifyConnected: (connected: boolean) => void;
@@ -60,16 +61,34 @@ export const useDashboardStore = create<DashboardState>((set) => ({
   setSidebarOpen: (open) => set({ isSidebarOpen: open }),
   theme:
     typeof window !== "undefined"
-      ? ((localStorage.getItem("theme") as "light" | "dark") || "light")
-      : "light",
+      ? ((localStorage.getItem("theme") as "light" | "dark" | "system") || "system")
+      : "system",
+  setTheme: (theme) =>
+    set(() => {
+      if (typeof window !== "undefined") {
+        localStorage.setItem("theme", theme);
+        if (theme === "system") {
+          const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+          document.documentElement.classList.toggle("dark", prefersDark);
+        } else {
+          document.documentElement.classList.toggle("dark", theme === "dark");
+        }
+      }
+      return { theme };
+    }),
   toggleTheme: () =>
     set((state) => {
-      const newTheme = state.theme === "light" ? "dark" : "light";
+      const next = state.theme === "light" ? "dark" : state.theme === "dark" ? "system" : "light";
       if (typeof window !== "undefined") {
-        localStorage.setItem("theme", newTheme);
-        document.documentElement.classList.toggle("dark", newTheme === "dark");
+        localStorage.setItem("theme", next);
+        if (next === "system") {
+          const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+          document.documentElement.classList.toggle("dark", prefersDark);
+        } else {
+          document.documentElement.classList.toggle("dark", next === "dark");
+        }
       }
-      return { theme: newTheme };
+      return { theme: next };
     }),
   shopifyConnected: false,
   setShopifyConnected: (connected) =>

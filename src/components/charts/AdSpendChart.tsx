@@ -14,25 +14,36 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { MOCK_CHART_DATA } from "@/lib/mock-data";
 import { formatCurrency } from "@/lib/utils";
-import { CHART_COLORS } from "@/lib/utils/colors";
+import { getChartColors } from "@/lib/utils/colors";
 import {
   getMonthsForTimeRange,
   filterChartDataByTimeRange,
 } from "@/lib/utils/filters";
 import { useDashboardStore } from "@/stores/dashboard-store";
+import { useDarkMode } from "@/hooks/useDarkMode";
 import { Search } from "lucide-react";
 
 interface AdSpendTooltipProps {
   active?: boolean;
   payload?: Array<{ name: string; value: number; color: string; fill: string }>;
   label?: string;
+  isDark?: boolean;
 }
 
-function CustomTooltip({ active, payload, label }: AdSpendTooltipProps) {
+function CustomTooltip({ active, payload, label, isDark }: AdSpendTooltipProps) {
   if (!active || !payload) return null;
 
+  const colors = getChartColors(isDark ?? false);
+
   return (
-    <div className="rounded-lg border bg-card text-card-foreground p-3 shadow-lg text-sm">
+    <div
+      className="rounded-lg border p-3 shadow-lg text-sm"
+      style={{
+        backgroundColor: colors.tooltipBg,
+        borderColor: colors.tooltipBorder,
+        color: colors.tooltipText,
+      }}
+    >
       <p className="font-semibold font-heading mb-2">{label}</p>
       <div className="space-y-1">
         {payload.map((p) => (
@@ -51,6 +62,8 @@ function CustomTooltip({ active, payload, label }: AdSpendTooltipProps) {
 
 export function AdSpendChart() {
   const { adsPlatform, timeRange, selectedMonth } = useDashboardStore((s) => s.filters);
+  const isDark = useDarkMode();
+  const colors = getChartColors(isDark);
 
   const data = useMemo(() => {
     const months = getMonthsForTimeRange(selectedMonth, timeRange);
@@ -77,28 +90,28 @@ export function AdSpendChart() {
         <div className="h-[350px]" role="img" aria-label="Ad spend grouped bar chart showing actual vs budget">
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={data} margin={{ top: 5, right: 20, bottom: 5, left: 10 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+              <CartesianGrid strokeDasharray="3 3" stroke={colors.grid} />
               <XAxis
                 dataKey="month"
-                tick={{ fontSize: 12 }}
+                tick={{ fontSize: 12, fill: colors.axisTickFill }}
               />
               <YAxis
-                tick={{ fontSize: 12 }}
+                tick={{ fontSize: 12, fill: colors.axisTickFill }}
                 tickFormatter={(v) => `\u00A3${(v / 1000).toFixed(0)}k`}
               />
-              <Tooltip content={<CustomTooltip />} />
+              <Tooltip content={<CustomTooltip isDark={isDark} />} />
               <Legend wrapperStyle={{ fontSize: 12, paddingTop: 8 }} />
               {showMeta && (
-                <Bar dataKey="meta_actual" name="Meta Actual" fill={CHART_COLORS.brand} radius={[2, 2, 0, 0]} />
+                <Bar dataKey="meta_actual" name="Meta Actual" fill={colors.brand} radius={[2, 2, 0, 0]} />
               )}
               {showMeta && (
-                <Bar dataKey="meta_budget" name="Meta Budget" fill={CHART_COLORS.brand} opacity={0.25} radius={[2, 2, 0, 0]} />
+                <Bar dataKey="meta_budget" name="Meta Budget" fill={colors.brand} opacity={0.25} radius={[2, 2, 0, 0]} />
               )}
               {showAmazon && (
-                <Bar dataKey="amazon_actual" name="Amazon Actual" fill={CHART_COLORS.brandMedium} radius={[2, 2, 0, 0]} />
+                <Bar dataKey="amazon_actual" name="Amazon Actual" fill={colors.brandMedium} radius={[2, 2, 0, 0]} />
               )}
               {showAmazon && (
-                <Bar dataKey="amazon_budget" name="Amazon Budget" fill={CHART_COLORS.brandMedium} opacity={0.25} radius={[2, 2, 0, 0]} />
+                <Bar dataKey="amazon_budget" name="Amazon Budget" fill={colors.brandMedium} opacity={0.25} radius={[2, 2, 0, 0]} />
               )}
             </BarChart>
           </ResponsiveContainer>
