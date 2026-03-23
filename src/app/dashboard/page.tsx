@@ -24,13 +24,30 @@ import {
 } from "lucide-react";
 
 export default function DashboardPage() {
-  const { activeTab, setActiveTab, setShopifyConnected, setShopifyStoreName } =
+  const { activeTab, setActiveTab, setShopifyConnected, setShopifyStoreName, setMetaConnected, setSupabaseConnected } =
     useDashboardStore();
 
-  // Check Shopify connection on mount so the indicator is accurate
+  // Check all API connections on mount
   useEffect(() => {
     async function checkStatus() {
       try {
+        // Check overall status (includes Meta, Supabase)
+        const statusRes = await fetch("/api/status");
+        if (statusRes.ok) {
+          const status = await statusRes.json();
+          if (status.meta_ads?.connected) {
+            setMetaConnected(true);
+          }
+          if (status.supabase?.connected) {
+            setSupabaseConnected(true);
+          }
+        }
+      } catch {
+        // API not available — stay in mock mode
+      }
+
+      try {
+        // Check Shopify separately (has its own endpoint)
         const res = await fetch("/api/shopify/status");
         if (res.ok) {
           const data = await res.json();
@@ -40,11 +57,11 @@ export default function DashboardPage() {
           }
         }
       } catch {
-        // API not available — stay in mock mode
+        // Shopify not available
       }
     }
     checkStatus();
-  }, [setShopifyConnected, setShopifyStoreName]);
+  }, [setShopifyConnected, setShopifyStoreName, setMetaConnected, setSupabaseConnected]);
 
   return (
     <div className="space-y-5">

@@ -26,6 +26,8 @@ interface DashboardState {
   setShopifyStoreName: (name: string) => void;
   supabaseConnected: boolean;
   setSupabaseConnected: (connected: boolean) => void;
+  metaConnected: boolean;
+  setMetaConnected: (connected: boolean) => void;
   dataSource: "mock" | "live" | "supabase";
   setDataSource: (source: "mock" | "live" | "supabase") => void;
   latestRecommendation: LLMRecommendation | null;
@@ -101,6 +103,12 @@ export const useDashboardStore = create<DashboardState>((set) => ({
   setShopifyStoreName: (name) => set({ shopifyStoreName: name }),
   supabaseConnected: false,
   setSupabaseConnected: (connected) => set({ supabaseConnected: connected }),
+  metaConnected: false,
+  setMetaConnected: (connected) =>
+    set((state) => ({
+      metaConnected: connected,
+      dataSource: connected && state.dataSource === "mock" ? "live" : state.dataSource,
+    })),
   dataSource: "mock",
   setDataSource: (source) => set({ dataSource: source }),
   latestRecommendation: null,

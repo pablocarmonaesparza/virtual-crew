@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -14,17 +15,54 @@ import {
   filterAdSpendByPlatform,
   filterAdSpendByTimeRange,
 } from "@/lib/utils/filters";
+import type { AdSpendTableRow } from "@/types";
 
 export function AdSpendTable() {
-  const { filters } = useDashboardStore();
+  const { filters, metaConnected, shopifyConnected, supabaseConnected } = useDashboardStore();
   const { toast } = useToast();
 
+  const anyLiveSource = metaConnected || shopifyConnected || supabaseConnected;
+
+  // Fetch live ad spend data when Meta is connected
+  const { data: liveAdSpend } = useQuery<AdSpendTableRow[]>({
+    queryKey: ["adspend", filters.selectedMonth, filters.timeRange, filters.adsPlatform, metaConnected, supabaseConnected],
+    queryFn: async () => {
+      const params = new URLSearchParams({
+        month: filters.selectedMonth,
+        platform: filters.adsPlatform,
+        timeRange: filters.timeRange,
+      });
+      const res = await fetch(`/api/kpi?${params}&type=adspend`);
+      if (!res.ok) {
+        // Try the meta insights endpoint directly
+        const metaRes = await fetch("/api/meta/insights");
+        if (!metaRes.ok) throw new Error("Failed to fetch ad spend");
+        const metaData = await metaRes.json();
+        return metaData.ad_spend_rows || [];
+      }
+      const data = await res.json();
+      return data.adSpendRows || [];
+    },
+    enabled: metaConnected,
+    staleTime: 5 * 60 * 1000,
+    retry: 1,
+  });
+
   const data = useMemo(() => {
+    // Use live Meta data if available
+    if (liveAdSpend && liveAdSpend.length > 0) {
+      const months = getMonthsForTimeRange(filters.selectedMonth, filters.timeRange);
+      let filtered = filterAdSpendByTimeRange(liveAdSpend, months);
+      filtered = filterAdSpendByPlatform(filtered, filters.adsPlatform);
+      return filtered;
+    }
+
+    // Fallback to mock
     const months = getMonthsForTimeRange(filters.selectedMonth, filters.timeRange);
     let filtered = filterAdSpendByTimeRange(MOCK_AD_SPEND_TABLE, months);
     filtered = filterAdSpendByPlatform(filtered, filters.adsPlatform);
     return filtered;
-  }, [filters.selectedMonth, filters.timeRange, filters.adsPlatform]);
+  }, [filters.selectedMonth, filters.timeRange, filters.adsPlatform, liveAdSpend]);
 
   const handleExport = () => {
     exportToCSV(
