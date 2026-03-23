@@ -32,6 +32,16 @@ import {
   getAdSpendFromDB,
   hasSupabaseData,
 } from "@/lib/supabase/queries";
+import {
+  isMetaConnected,
+  getMonthlyInsights,
+} from "@/lib/meta/client";
+import {
+  transformMetaToAdSpendRows,
+  mergeAdSpendData,
+  transformMetaToCACContribution,
+  getMetaKPISummary,
+} from "@/lib/meta/transform";
 
 // ── Connection checks ──
 
@@ -76,6 +86,44 @@ export async function getActiveDataSource(): Promise<"supabase" | "shopify" | "m
   if (shopify) return "shopify";
 
   return "mock";
+}
+
+// ── Meta Ads connection check (cached) ──
+
+let _metaCheckCache: { connected: boolean; checked: boolean } = {
+  connected: false,
+  checked: false,
+};
+
+async function checkMetaConnected(): Promise<boolean> {
+  if (_metaCheckCache.checked) return _metaCheckCache.connected;
+  try {
+    const result = await isMetaConnected();
+    _metaCheckCache = { connected: result, checked: true };
+    return result;
+  } catch {
+    _metaCheckCache = { connected: false, checked: true };
+    return false;
+  }
+}
+
+/**
+ * Fetch Meta Ads monthly insights for the given filter date range.
+ * Returns null if Meta is not connected.
+ */
+async function getMetaInsightsForFilters(filters?: Partial<DashboardFilters>) {
+  const connected = await checkMetaConnected();
+  if (!connected) return null;
+
+  try {
+    const { created_at_min, created_at_max } = getDateRangeForFilters(filters);
+    const since = created_at_min.split("T")[0];
+    const until = created_at_max.split("T")[0];
+    return await getMonthlyInsights(since, until);
+  } catch (error) {
+    console.error("Meta Ads fetch failed:", error);
+    return null;
+  }
 }
 
 // ── Date range helpers ──
@@ -234,32 +282,46 @@ export async function getKPIData(
 
   // 2. Try Shopify
   const connected = await isShopifyConnected();
+  let kpi: KPIData;
+
   if (!connected) {
-    return MOCK_KPI_DATA;
+    kpi = { ...MOCK_KPI_DATA };
+  } else {
+    try {
+      const dateRange = getDateRangeForFilters(filters);
+      const rawOrders = await getOrders({
+        created_at_min: dateRange.created_at_min,
+        created_at_max: dateRange.created_at_max,
+        status: "any",
+      });
+
+      const internalOrders = transformRawOrders(rawOrders);
+
+      const filteredOrders =
+        filters?.channel && filters.channel !== "all"
+          ? internalOrders.filter(
+              (o) => o.channel.toLowerCase() === filters.channel
+            )
+          : internalOrders;
+
+      kpi = transformOrdersToKPI(filteredOrders);
+    } catch (error) {
+      console.error("Error fetching Shopify KPI data, falling back to mock:", error);
+      kpi = { ...MOCK_KPI_DATA };
+    }
   }
 
-  try {
-    const dateRange = getDateRangeForFilters(filters);
-    const rawOrders = await getOrders({
-      created_at_min: dateRange.created_at_min,
-      created_at_max: dateRange.created_at_max,
-      status: "any",
-    });
-
-    const internalOrders = transformRawOrders(rawOrders);
-
-    const filteredOrders =
-      filters?.channel && filters.channel !== "all"
-        ? internalOrders.filter(
-            (o) => o.channel.toLowerCase() === filters.channel
-          )
-        : internalOrders;
-
-    return transformOrdersToKPI(filteredOrders);
-  } catch (error) {
-    console.error("Error fetching Shopify KPI data, falling back to mock:", error);
-    return MOCK_KPI_DATA;
+  // 3. Enrich KPI with real Meta Ads spend data
+  const metaInsights = await getMetaInsightsForFilters(filters);
+  if (metaInsights && metaInsights.length > 0) {
+    const metaKPI = getMetaKPISummary(metaInsights);
+    kpi.total_ad_spend = metaKPI.total_spend;
+    kpi.ad_spend_mom_change = metaKPI.mom_change;
+    kpi.average_cac = metaKPI.avg_cac;
+    kpi.cac_mom_change = metaKPI.mom_change;
   }
+
+  return kpi;
 }
 
 // ── Ad Spend data ──
@@ -272,10 +334,36 @@ export async function getAdSpendData(
     const supabaseData = await getAdSpendFromDB(filters);
     if (supabaseData.length > 0) return supabaseData;
   } catch (err) {
-    console.error("Supabase ad spend fetch failed, falling back to mock:", err);
+    console.error("Supabase ad spend fetch failed, trying Meta API:", err);
   }
 
-  // 2. Fallback to mock (no Shopify source for ad spend)
+  // 2. Try Meta Ads API for real data
+  const metaInsights = await getMetaInsightsForFilters(filters);
+  if (metaInsights && metaInsights.length > 0) {
+    const metaRows = transformMetaToAdSpendRows(metaInsights);
+
+    // Keep Amazon mock rows for now (until Amazon Ads API is connected)
+    const amazonMockRows = MOCK_AD_SPEND_TABLE.filter(
+      (r) => r.platform === "Amazon Ads"
+    );
+    const allData = mergeAdSpendData(metaRows, amazonMockRows);
+
+    // Apply platform filter
+    if (filters?.adsPlatform && filters.adsPlatform !== "all") {
+      const platformMap: Record<string, string> = {
+        meta: "Meta Ads",
+        amazon_ads: "Amazon Ads",
+      };
+      const platformName = platformMap[filters.adsPlatform];
+      if (platformName) {
+        return allData.filter((row) => row.platform === platformName);
+      }
+    }
+
+    return allData;
+  }
+
+  // 3. Fallback to mock
   let data = MOCK_AD_SPEND_TABLE;
 
   if (filters?.adsPlatform && filters.adsPlatform !== "all") {

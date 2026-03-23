@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { isShopifyConnected } from "@/lib/shopify/client";
+import { isMetaConnected } from "@/lib/meta/client";
 import { getTableCounts, getApiCredentialsFromDB } from "@/lib/supabase/queries";
 import { createAdminClient } from "@/lib/supabase/admin";
 
@@ -49,6 +50,17 @@ export async function GET() {
     configured: !!process.env.ANTHROPIC_API_KEY,
   };
 
+  // ── Meta Ads status ──
+  try {
+    const metaConnected = await isMetaConnected();
+    result.meta_ads = {
+      connected: metaConnected,
+      ad_account_id: process.env.META_AD_ACCOUNT_ID || null,
+    };
+  } catch {
+    result.meta_ads = { connected: false };
+  }
+
   // ── API credentials from Supabase ──
   try {
     const credentials = await getApiCredentialsFromDB();
@@ -60,13 +72,9 @@ export async function GET() {
     result.amazon_ads = {
       configured: platforms.has("amazon_ads"),
     };
-    result.meta_ads = {
-      configured: platforms.has("meta"),
-    };
   } catch {
     result.amazon_sp = { configured: false };
     result.amazon_ads = { configured: false };
-    result.meta_ads = { configured: false };
   }
 
   return NextResponse.json(result);
