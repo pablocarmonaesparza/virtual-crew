@@ -97,7 +97,7 @@ export function AdSpendChart() {
               />
               <YAxis
                 tick={{ fontSize: 12, fill: colors.axisTickFill }}
-                tickFormatter={(v) => `\u00A3${(v / 1000).toFixed(0)}k`}
+                tickFormatter={(v) => `£${(v / 1000).toFixed(0)}k`}
               />
               <Tooltip content={<CustomTooltip isDark={isDark} />} />
               <Legend wrapperStyle={{ fontSize: 12, paddingTop: 8 }} />

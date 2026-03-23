@@ -54,7 +54,7 @@ function CustomTooltip({ active, payload, label, isDark }: CACTooltipProps) {
               {p.name}:
             </span>
             <span className="font-medium tabular-nums">
-              {p.name.includes("CAC") ? `\u00A3${p.value.toFixed(2)}` : formatNumber(p.value)}
+              {p.name.includes("CAC") ? `£${p.value.toFixed(2)}` : formatNumber(p.value)}
             </span>
           </div>
         ))}
@@ -107,8 +107,8 @@ export function CACChart() {
                 yAxisId="right"
                 orientation="right"
                 tick={{ fontSize: 12, fill: colors.axisTickFill }}
-                tickFormatter={(v) => `\u00A3${v}`}
-                label={{ value: "CAC (\u00A3)", angle: 90, position: "insideRight", style: { fontSize: 11, fill: colors.axisTickFill } }}
+                tickFormatter={(v) => `£${v}`}
+                label={{ value: "CAC (£)", angle: 90, position: "insideRight", style: { fontSize: 11, fill: colors.axisTickFill } }}
               />
               <Tooltip content={<CustomTooltip isDark={isDark} />} />
               <Legend wrapperStyle={{ fontSize: 12, paddingTop: 8 }} />
@@ -124,7 +124,7 @@ export function CACChart() {
                 yAxisId="right"
                 type="monotone"
                 dataKey="cac"
-                name="CAC (\u00A3)"
+                name="CAC (£)"
                 stroke={cacLineColor}
                 strokeWidth={2.5}
                 dot={{ r: 4, fill: cacLineColor }}
