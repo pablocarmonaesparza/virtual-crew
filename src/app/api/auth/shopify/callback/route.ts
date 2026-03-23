@@ -100,6 +100,7 @@ export async function GET(request: NextRequest) {
               organization_id: org.id,
               platform: "shopify",
               credential_name: "access_token",
+              credential_value: tokenData.access_token,
               is_active: true,
               updated_at: new Date().toISOString(),
             },
@@ -112,6 +113,7 @@ export async function GET(request: NextRequest) {
               organization_id: org.id,
               platform: "shopify",
               credential_name: "store_url",
+              credential_value: shopUrl,
               is_active: true,
               updated_at: new Date().toISOString(),
             },
@@ -131,6 +133,15 @@ export async function GET(request: NextRequest) {
     );
     const response = NextResponse.redirect(redirectUrl.toString());
     response.cookies.delete("shopify_oauth_state");
+
+    // Set the token as an HTTP-only cookie so it persists across deployments
+    response.cookies.set("shopify_access_token", tokenData.access_token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      path: "/",
+      maxAge: 60 * 60 * 24 * 365, // 1 year
+    });
 
     return response;
   } catch (error) {

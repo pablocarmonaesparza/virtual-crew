@@ -17,9 +17,10 @@ CREATE TABLE IF NOT EXISTS skus (
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
--- 2. Shopify Orders
+-- 2. Shopify Orders (one row per line item)
 CREATE TABLE IF NOT EXISTS shopify_orders (
-  order_id TEXT PRIMARY KEY,
+  order_id TEXT NOT NULL,
+  line_item_id TEXT NOT NULL,
   order_date DATE NOT NULL,
   sku_id TEXT NOT NULL REFERENCES skus(sku_id),
   quantity INTEGER NOT NULL,
@@ -29,19 +30,22 @@ CREATE TABLE IF NOT EXISTS shopify_orders (
   customer_type TEXT NOT NULL CHECK (customer_type IN ('new', 'returning')),
   subscription_type TEXT NOT NULL CHECK (subscription_type IN ('one-time', 'subscription', 'none')),
   channel TEXT NOT NULL DEFAULT 'D2C/Shopify',
-  synced_at TIMESTAMPTZ NOT NULL DEFAULT now()
+  synced_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  PRIMARY KEY (order_id, line_item_id)
 );
 
--- 3. Amazon Orders
+-- 3. Amazon Orders (one row per line item)
 CREATE TABLE IF NOT EXISTS amazon_orders (
-  order_id TEXT PRIMARY KEY,
+  order_id TEXT NOT NULL,
+  line_item_id TEXT NOT NULL,
   order_date DATE NOT NULL,
   sku_id TEXT REFERENCES skus(sku_id),
   asin TEXT,
   quantity INTEGER NOT NULL,
   revenue DECIMAL(12,2) NOT NULL DEFAULT 0,
   marketplace TEXT NOT NULL CHECK (marketplace IN ('UK', 'US', 'EU')),
-  synced_at TIMESTAMPTZ NOT NULL DEFAULT now()
+  synced_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  PRIMARY KEY (order_id, line_item_id)
 );
 
 -- 4. Shopify Inventory

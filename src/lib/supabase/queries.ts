@@ -41,16 +41,18 @@ function getDateRange(filters?: Partial<DashboardFilters>): {
   if (selectedMonth) {
     const [year, month] = selectedMonth.split("-").map(Number);
     endDate = new Date(year, month, 0); // last day of the selected month
+    // Subtract (monthsBack - 1) so the range is inclusive of both start and end months.
+    // E.g. "6m" from March 2026 → Oct 2025..Mar 2026 = 6 months.
     const monthsBack =
       timeRange === "mtd"
         ? 0
         : timeRange === "ytd"
           ? month - 1
           : timeRange === "3m"
-            ? 3
+            ? 2
             : timeRange === "6m"
-              ? 6
-              : 12;
+              ? 5
+              : 11;
     startDate = new Date(year, month - 1 - monthsBack, 1);
   } else {
     const monthsBack =
@@ -59,10 +61,10 @@ function getDateRange(filters?: Partial<DashboardFilters>): {
         : timeRange === "ytd"
           ? now.getMonth()
           : timeRange === "3m"
-            ? 3
+            ? 2
             : timeRange === "6m"
-              ? 6
-              : 12;
+              ? 5
+              : 11;
     startDate = new Date(now.getFullYear(), now.getMonth() - monthsBack, 1);
   }
 

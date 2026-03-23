@@ -80,7 +80,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const orders = $input.all().map(item => item.json);\nconst transformed = [];\n\nfor (const order of orders) {\n  const orderItems = order.OrderItems || [];\n  for (const item of orderItems) {\n    transformed.push({\n      order_id: order.AmazonOrderId,\n      order_date: order.PurchaseDate?.split('T')[0],\n      sku_id: item.SellerSKU,\n      asin: item.ASIN,\n      quantity: item.QuantityOrdered || 1,\n      revenue: parseFloat(item.ItemPrice?.Amount || '0'),\n      marketplace: 'UK',\n      synced_at: new Date().toISOString()\n    });\n  }\n}\n\nreturn transformed.map(t => ({ json: t }));"
+        "jsCode": "const orders = $input.all().map(item => item.json);\nconst transformed = [];\n\nfor (const order of orders) {\n  const orderItems = order.OrderItems || [];\n  for (const item of orderItems) {\n    transformed.push({\n      order_id: order.AmazonOrderId,\n      line_item_id: item.OrderItemId || item.ASIN,\n      order_date: order.PurchaseDate?.split('T')[0],\n      sku_id: item.SellerSKU,\n      asin: item.ASIN,\n      quantity: item.QuantityOrdered || 1,\n      revenue: parseFloat(item.ItemPrice?.Amount || '0'),\n      marketplace: 'UK',\n      synced_at: new Date().toISOString()\n    });\n  }\n}\n\nreturn transformed.map(t => ({ json: t }));"
       },
       "id": "transform-orders",
       "name": "Transform Orders",
@@ -100,7 +100,7 @@
       "parameters": {
         "operation": "upsert",
         "tableId": "amazon_orders",
-        "conflictColumns": "order_id",
+        "conflictColumns": "order_id,line_item_id",
         "dataMode": "autoMap"
       },
       "id": "upsert-orders",

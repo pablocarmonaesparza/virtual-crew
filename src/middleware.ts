@@ -70,8 +70,13 @@ export async function middleware(request: NextRequest) {
       return NextResponse.redirect(loginUrl);
     }
   } catch {
-    // If auth check fails (e.g., Supabase unreachable), allow through in demo mode
-    return NextResponse.next({ request });
+    // If auth check fails (e.g., Supabase unreachable), deny access
+    if (pathname.startsWith("/api")) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+    const loginUrl = request.nextUrl.clone();
+    loginUrl.pathname = "/login";
+    return NextResponse.redirect(loginUrl);
   }
 
   return supabaseResponse;

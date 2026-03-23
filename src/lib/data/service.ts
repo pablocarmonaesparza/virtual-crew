@@ -330,11 +330,15 @@ export async function getCACData(
 
     const cacData = transformCustomersToCAC(filteredOrders, rawCustomers);
 
-    const amazonMockData = MOCK_CAC_TABLE.filter(
-      (r) => r.channel === "Amazon"
-    );
+    // Only append Amazon mock rows when the channel filter allows it
+    if (!filters?.channel || filters.channel === "all" || filters.channel === "amazon") {
+      const amazonMockData = MOCK_CAC_TABLE.filter(
+        (r) => r.channel === "Amazon"
+      );
+      return [...cacData, ...amazonMockData];
+    }
 
-    return [...cacData, ...amazonMockData];
+    return cacData;
   } catch (error) {
     console.error("Error fetching Shopify CAC data, falling back to mock:", error);
     return applyCACFilters(MOCK_CAC_TABLE, filters);

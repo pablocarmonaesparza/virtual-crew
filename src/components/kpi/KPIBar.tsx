@@ -88,11 +88,11 @@ function KPICard({ title, value, change, icon, subtitle, isLoading }: KPICardPro
 }
 
 export function KPIBar() {
-  const { filters, shopifyConnected } = useDashboardStore();
+  const { filters, shopifyConnected, supabaseConnected } = useDashboardStore();
 
   // Fetch live KPI data when Shopify is connected
   const { data: liveKPI, isLoading: isLiveLoading } = useQuery({
-    queryKey: ["kpi", filters.selectedMonth, filters.adsPlatform, filters.channel, shopifyConnected],
+    queryKey: ["kpi", filters.selectedMonth, filters.adsPlatform, filters.channel, shopifyConnected, supabaseConnected],
     queryFn: async () => {
       const params = new URLSearchParams({
         month: filters.selectedMonth,
@@ -104,12 +104,12 @@ export function KPIBar() {
       if (!res.ok) throw new Error("Failed to fetch KPI data");
       return res.json();
     },
-    enabled: shopifyConnected,
+    enabled: shopifyConnected || supabaseConnected,
     staleTime: 5 * 60 * 1000,
     retry: 1,
   });
 
-  const isLoading = shopifyConnected && isLiveLoading;
+  const isLoading = (shopifyConnected || supabaseConnected) && isLiveLoading;
 
   const mockKpiData = useMemo(() => {
     const selectedMonth = filters.selectedMonth;

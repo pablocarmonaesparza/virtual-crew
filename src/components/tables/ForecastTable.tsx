@@ -17,7 +17,7 @@ import { useToast } from "@/components/ui/toast";
 type SortKey = "month" | "forecast_baseline" | "actual" | "accuracy_pct";
 
 export function ForecastTable() {
-  const { filters, shopifyConnected } = useDashboardStore();
+  const { filters, shopifyConnected, supabaseConnected } = useDashboardStore();
   const [sortKey, setSortKey] = useState<SortKey>("month");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
   const { toast } = useToast();
@@ -25,7 +25,7 @@ export function ForecastTable() {
 
   // Fetch live forecast data when Shopify is connected
   const { data: liveForecast, isLoading: isLiveLoading } = useQuery({
-    queryKey: ["forecast", filters.selectedMonth, filters.timeRange, filters.channel, shopifyConnected],
+    queryKey: ["forecast", filters.selectedMonth, filters.timeRange, filters.channel, shopifyConnected, supabaseConnected],
     queryFn: async () => {
       const params = new URLSearchParams({
         month: filters.selectedMonth,
@@ -36,7 +36,7 @@ export function ForecastTable() {
       if (!res.ok) throw new Error("Failed to fetch forecast data");
       return res.json();
     },
-    enabled: shopifyConnected,
+    enabled: shopifyConnected || supabaseConnected,
     staleTime: 5 * 60 * 1000,
     retry: 1,
   });
@@ -48,7 +48,7 @@ export function ForecastTable() {
 
   // Use live data if available, otherwise fall back to mock
   const filteredData = liveForecast?.data ?? mockFilteredData;
-  const isLoading = shopifyConnected && isLiveLoading;
+  const isLoading = (shopifyConnected || supabaseConnected) && isLiveLoading;
 
   const data = [...filteredData].sort((a: Record<string, unknown>, b: Record<string, unknown>) => {
     const aVal = (a[sortKey] as number | string | null) ?? -Infinity;

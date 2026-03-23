@@ -1,5 +1,6 @@
 import { promises as fs } from "fs";
 import path from "path";
+import { createAdminClient } from "@/lib/supabase/admin";
 
 const API_VERSION = "2024-01";
 
@@ -96,13 +97,39 @@ function getTokenFromEnv(): string | null {
   return process.env.SHOPIFY_ACCESS_TOKEN || null;
 }
 
+async function getTokenFromSupabase(): Promise<string | null> {
+  try {
+    const supabase = createAdminClient();
+    if (!supabase) return null;
+
+    const { data, error } = await supabase
+      .from("api_credentials")
+      .select("credential_value")
+      .eq("platform", "shopify")
+      .eq("credential_name", "access_token")
+      .eq("is_active", true)
+      .limit(1)
+      .single();
+
+    if (error || !data?.credential_value) return null;
+    return data.credential_value as string;
+  } catch {
+    return null;
+  }
+}
+
 async function getAccessToken(): Promise<string | null> {
-  // Prefer env variable, fallback to file
+  // 1. Prefer env variable
   const envToken = getTokenFromEnv();
   if (envToken) return envToken;
 
+  // 2. Try file (works in local dev)
   const fileData = await getTokenFromFile();
-  return fileData?.access_token ?? null;
+  if (fileData?.access_token) return fileData.access_token;
+
+  // 3. Try Supabase api_credentials table (works on Vercel)
+  const supabaseToken = await getTokenFromSupabase();
+  return supabaseToken;
 }
 
 function getShopUrl(): string {

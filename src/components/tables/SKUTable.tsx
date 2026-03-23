@@ -199,7 +199,7 @@ function SKUDetailModal({ skuId, months, onClose }: SKUModalProps) {
 }
 
 export function SKUTable() {
-  const { filters, shopifyConnected } = useDashboardStore();
+  const { filters, shopifyConnected, supabaseConnected } = useDashboardStore();
   const [page, setPage] = useState(0);
   const [selectedSku, setSelectedSku] = useState<{ skuId: string; months: Record<string, { forecast_baseline: number; forecast_ambitious: number; actual: number | null; accuracy_pct: number | null; mom_change: number | null }> } | null>(null);
   const pageSize = 10;
@@ -226,7 +226,7 @@ export function SKUTable() {
       if (!res.ok) throw new Error("Failed to fetch SKU data");
       return res.json();
     },
-    enabled: shopifyConnected,
+    enabled: shopifyConnected || supabaseConnected,
     staleTime: 5 * 60 * 1000,
     retry: 1,
   });
@@ -261,7 +261,7 @@ export function SKUTable() {
   // Use live data if available, otherwise mock
   const data = liveSKU?.rows ?? mockData;
   const VISIBLE_MONTHS: string[] = liveSKU?.months ?? mockVisibleMonths;
-  const isLoading = shopifyConnected && isLiveLoading;
+  const isLoading = (shopifyConnected || supabaseConnected) && isLiveLoading;
 
   // Reset page when filters change
   useEffect(() => {

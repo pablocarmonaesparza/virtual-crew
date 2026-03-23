@@ -76,7 +76,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const orders = $input.all().map(item => item.json);\nconst transformed = [];\n\nfor (const order of orders) {\n  if (!order.line_items) continue;\n  for (const item of order.line_items) {\n    transformed.push({\n      order_id: String(order.id),\n      order_date: order.created_at.split('T')[0],\n      sku_id: item.sku || item.variant_id,\n      quantity: item.quantity,\n      gross_revenue: parseFloat(item.price) * item.quantity,\n      net_revenue: parseFloat(item.price) * item.quantity - parseFloat(item.total_discount || '0'),\n      discount_amount: parseFloat(item.total_discount || '0'),\n      customer_type: order.customer?.orders_count > 1 ? 'returning' : 'new',\n      subscription_type: item.properties?.some(p => p.name === 'subscription_id') ? 'subscription' : 'one-time',\n      channel: 'D2C/Shopify',\n      synced_at: new Date().toISOString()\n    });\n  }\n}\n\nreturn transformed.map(t => ({ json: t }));"
+        "jsCode": "const orders = $input.all().map(item => item.json);\nconst transformed = [];\n\nfor (const order of orders) {\n  if (!order.line_items) continue;\n  for (const item of order.line_items) {\n    transformed.push({\n      order_id: String(order.id),\n      line_item_id: String(item.id),\n      order_date: order.created_at.split('T')[0],\n      sku_id: item.sku || item.variant_id,\n      quantity: item.quantity,\n      gross_revenue: parseFloat(item.price) * item.quantity,\n      net_revenue: parseFloat(item.price) * item.quantity - parseFloat(item.total_discount || '0'),\n      discount_amount: parseFloat(item.total_discount || '0'),\n      customer_type: order.customer?.orders_count > 1 ? 'returning' : 'new',\n      subscription_type: item.properties?.some(p => p.name === 'subscription_id') ? 'subscription' : 'one-time',\n      channel: 'D2C/Shopify',\n      synced_at: new Date().toISOString()\n    });\n  }\n}\n\nreturn transformed.map(t => ({ json: t }));"
       },
       "id": "transform-orders",
       "name": "Transform Orders",
@@ -87,7 +87,7 @@
       "parameters": {
         "operation": "upsert",
         "tableId": "shopify_orders",
-        "conflictColumns": "order_id",
+        "conflictColumns": "order_id,line_item_id",
         "dataMode": "autoMap"
       },
       "id": "upsert-orders",
