@@ -14,6 +14,7 @@ import { CACChart } from "@/components/charts/CACChart";
 import { NewVsRepeatChart } from "@/components/charts/NewVsRepeatChart";
 import { RecommendationsPanel } from "@/components/recommendations/RecommendationsPanel";
 import { DataSourceIndicator } from "@/components/layout/DataSourceIndicator";
+import { SetupBanner } from "@/components/onboarding/SetupBanner";
 import { useDashboardStore } from "@/stores/dashboard-store";
 import {
   BarChart3,
@@ -65,6 +66,7 @@ export default function DashboardPage() {
 
   return (
     <div className="space-y-5">
+      <SetupBanner />
       <div className="flex items-center gap-3">
         <KPIBar />
       </div>

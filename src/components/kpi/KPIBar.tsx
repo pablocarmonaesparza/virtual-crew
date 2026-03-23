@@ -20,6 +20,7 @@ import {
   BarChart3,
 } from "lucide-react";
 import { useDashboardStore } from "@/stores/dashboard-store";
+import { SourceBadge } from "@/components/layout/SourceBadge";
 import {
   filterForecastByTimeRange,
   filterAdSpendByPlatform,
@@ -35,9 +36,10 @@ interface KPICardProps {
   icon: React.ReactNode;
   subtitle?: string;
   isLoading?: boolean;
+  sourceTag?: React.ReactNode;
 }
 
-function KPICard({ title, value, change, icon, subtitle, isLoading }: KPICardProps) {
+function KPICard({ title, value, change, icon, subtitle, isLoading, sourceTag }: KPICardProps) {
   const isPositive = change > 0;
   const isNeutral = change === 0;
 
@@ -65,7 +67,7 @@ function KPICard({ title, value, change, icon, subtitle, isLoading }: KPICardPro
             {icon}
           </div>
         </div>
-        <div className="mt-2">
+        <div className="mt-2 flex items-center gap-2 flex-wrap">
           {isLoading ? (
             <Skeleton className="h-5 w-20 rounded-full" />
           ) : (
@@ -81,6 +83,7 @@ function KPICard({ title, value, change, icon, subtitle, isLoading }: KPICardPro
               {formatPercent(change)} MoM
             </Badge>
           )}
+          {sourceTag && !isLoading && sourceTag}
         </div>
       </CardContent>
     </Card>
@@ -224,6 +227,7 @@ export function KPIBar() {
         icon={<DollarSign className="h-4 w-4" />}
         subtitle="Month to date"
         isLoading={isLoading}
+        sourceTag={<SourceBadge source={shopifyConnected ? "shopify" : "mock"} />}
       />
       <KPICard
         title="Forecast Accuracy"
@@ -232,6 +236,7 @@ export function KPIBar() {
         icon={<Target className="h-4 w-4" />}
         subtitle="vs. baseline"
         isLoading={isLoading}
+        sourceTag={<SourceBadge source={supabaseConnected ? "supabase" : "mock"} />}
       />
       <KPICard
         title="Ad Spend"
@@ -240,14 +245,16 @@ export function KPIBar() {
         icon={<BarChart3 className="h-4 w-4" />}
         subtitle={kpiData.platformLabel}
         isLoading={isLoading}
+        sourceTag={<SourceBadge source={metaConnected ? "meta" : "mock"} />}
       />
       <KPICard
         title="Avg. CAC"
-        value={`\u00A3${kpiData.averageCAC.toFixed(2)}`}
+        value={`£${kpiData.averageCAC.toFixed(2)}`}
         change={kpiData.cacMom}
         icon={<Users className="h-4 w-4" />}
         subtitle={kpiData.channelLabel}
         isLoading={isLoading}
+        sourceTag={<SourceBadge source={metaConnected ? "meta" : "mock"} />}
       />
       <KPICard
         title="Gap to Baseline"
@@ -262,6 +269,7 @@ export function KPIBar() {
         }
         subtitle={`Ambitious: ${formatPercent(kpiData.gapAmbitious)}`}
         isLoading={isLoading}
+        sourceTag={<SourceBadge source={supabaseConnected ? "supabase" : "mock"} />}
       />
     </div>
   );

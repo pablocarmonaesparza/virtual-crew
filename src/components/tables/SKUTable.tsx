@@ -11,6 +11,7 @@ import { formatNumber, formatMonth, exportToCSV } from "@/lib/utils";
 import { Download, X, Search } from "lucide-react";
 import { useToast } from "@/components/ui/toast";
 import { useDashboardStore } from "@/stores/dashboard-store";
+import { SourceBadge } from "@/components/layout/SourceBadge";
 import { filterSKUByCategory, getMonthsForTimeRange } from "@/lib/utils/filters";
 import type { ProductCategory, SKU } from "@/types";
 
@@ -296,7 +297,7 @@ export function SKUTable() {
   return (
     <Card>
       <CardHeader className="flex flex-row items-center justify-between pb-4">
-        <CardTitle className="text-lg">SKU Level Detail</CardTitle>
+        <CardTitle className="text-lg flex items-center gap-2">SKU Level Detail <SourceBadge source={supabaseConnected ? "supabase" : shopifyConnected ? "shopify" : "mock"} size="sm" /></CardTitle>
         <Button variant="outline" size="sm" onClick={handleExport}>
           <Download className="mr-2 h-3 w-3" />
           CSV

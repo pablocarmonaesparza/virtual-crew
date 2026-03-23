@@ -20,6 +20,7 @@ import {
   filterChartDataByTimeRange,
 } from "@/lib/utils/filters";
 import { useDashboardStore } from "@/stores/dashboard-store";
+import { SourceBadge } from "@/components/layout/SourceBadge";
 import { useDarkMode } from "@/hooks/useDarkMode";
 import { Search } from "lucide-react";
 
@@ -103,7 +104,7 @@ export function NewVsRepeatChart() {
   return (
     <Card>
       <CardHeader className="pb-4">
-        <CardTitle className="text-lg">New vs Returning Customers</CardTitle>
+        <CardTitle className="text-lg flex items-center gap-2">New vs Returning Customers <SourceBadge source="mock" size="sm" /></CardTitle>
       </CardHeader>
       <CardContent>
         {data.length === 0 ? (

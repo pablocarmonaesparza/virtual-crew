@@ -21,6 +21,7 @@ import {
   filterChartDataByTimeRange,
 } from "@/lib/utils/filters";
 import { useDashboardStore } from "@/stores/dashboard-store";
+import { SourceBadge } from "@/components/layout/SourceBadge";
 import { useDarkMode } from "@/hooks/useDarkMode";
 import { Search } from "lucide-react";
 
@@ -80,7 +81,7 @@ export function CACChart() {
   return (
     <Card>
       <CardHeader className="pb-4">
-        <CardTitle className="text-lg">CAC Trend vs New Customers</CardTitle>
+        <CardTitle className="text-lg flex items-center gap-2">CAC Trend vs New Customers <SourceBadge source="mock" size="sm" /></CardTitle>
       </CardHeader>
       <CardContent>
         {data.length === 0 ? (

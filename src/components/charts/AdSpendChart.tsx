@@ -20,6 +20,7 @@ import {
   filterChartDataByTimeRange,
 } from "@/lib/utils/filters";
 import { useDashboardStore } from "@/stores/dashboard-store";
+import { SourceBadge } from "@/components/layout/SourceBadge";
 import { useDarkMode } from "@/hooks/useDarkMode";
 import { Search } from "lucide-react";
 
@@ -77,7 +78,7 @@ export function AdSpendChart() {
   return (
     <Card>
       <CardHeader className="pb-4">
-        <CardTitle className="text-lg">Ad Spend — Actual vs Budget</CardTitle>
+        <CardTitle className="text-lg flex items-center gap-2">Ad Spend — Actual vs Budget <SourceBadge source="mock" size="sm" /></CardTitle>
       </CardHeader>
       <CardContent>
         {data.length === 0 ? (

@@ -8,6 +8,7 @@ import { MOCK_CAC_TABLE } from "@/lib/mock-data";
 import { formatCurrency, formatCurrencyPrecise, formatNumber, formatPercent, formatMonth, exportToCSV } from "@/lib/utils";
 import { Download, Search } from "lucide-react";
 import { useDashboardStore } from "@/stores/dashboard-store";
+import { SourceBadge } from "@/components/layout/SourceBadge";
 import { useToast } from "@/components/ui/toast";
 import {
   getMonthsForTimeRange,
@@ -16,7 +17,7 @@ import {
 } from "@/lib/utils/filters";
 
 export function CACTable() {
-  const { filters } = useDashboardStore();
+  const { filters, metaConnected, shopifyConnected } = useDashboardStore();
   const { toast } = useToast();
 
   const data = useMemo(() => {
@@ -65,7 +66,7 @@ export function CACTable() {
   return (
     <Card>
       <CardHeader className="flex flex-row items-center justify-between pb-4">
-        <CardTitle className="text-lg">Customer Acquisition Cost</CardTitle>
+        <CardTitle className="text-lg flex items-center gap-2">Customer Acquisition Cost <SourceBadge source={metaConnected ? "meta" : shopifyConnected ? "shopify" : "mock"} size="sm" /></CardTitle>
         <Button variant="outline" size="sm" onClick={handleExport}>
           <Download className="mr-2 h-3 w-3" />
           CSV

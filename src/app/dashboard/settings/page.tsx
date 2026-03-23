@@ -57,7 +57,7 @@ interface StatusResponse {
   anthropic?: { configured: boolean };
   amazon_sp?: { configured: boolean };
   amazon_ads?: { configured: boolean };
-  meta_ads?: { configured: boolean };
+  meta_ads?: { connected?: boolean; configured?: boolean; ad_account_id?: string | null };
 }
 
 interface SyncLog {
@@ -201,17 +201,19 @@ function OtherIntegrationCard({
   integration,
   isConfigured,
   onConfigure,
+  powers,
 }: {
   integration: IntegrationConfig;
   isConfigured?: boolean;
   onConfigure?: () => void;
+  powers?: string[];
 }) {
   return (
-    <Card className="h-full">
+    <Card className={`h-full ${isConfigured ? "border-green-200/50 dark:border-green-800/30" : ""}`}>
       <CardContent className="p-4">
         <div className="flex justify-between items-start gap-3 mb-3">
           <div className="flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-md bg-muted flex items-center justify-center text-muted-foreground">
+            <div className={`w-9 h-9 rounded-md flex items-center justify-center ${isConfigured ? "bg-green-50 dark:bg-green-950/50 text-green-600 dark:text-green-400" : "bg-muted text-muted-foreground"}`}>
               <integration.icon className="w-4 h-4" strokeWidth={2} />
             </div>
             <div>
@@ -221,7 +223,19 @@ function OtherIntegrationCard({
           </div>
           <StatusBadge status={isConfigured ? "connected" : "not_connected"} />
         </div>
-        <p className="text-xs text-muted-foreground mb-3">{integration.description}</p>
+        <p className="text-xs text-muted-foreground mb-2">{integration.description}</p>
+        {powers && powers.length > 0 && (
+          <div className="mb-3">
+            <p className="text-[10px] font-medium text-muted-foreground/70 uppercase tracking-wider mb-1">Powers</p>
+            <div className="flex gap-1 flex-wrap">
+              {powers.map((p) => (
+                <span key={p} className="text-[10px] bg-primary/5 dark:bg-primary/10 text-primary/70 px-1.5 py-0.5 rounded">
+                  {p}
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
         <div className="flex items-center justify-between">
           <div className="flex gap-1 flex-wrap">
             {integration.tables.map((t) => (
@@ -231,7 +245,7 @@ function OtherIntegrationCard({
             ))}
           </div>
           <Button variant="outline" size="sm" className="h-6 text-[10px] px-2 shrink-0" onClick={onConfigure}>
-            Configure
+            {isConfigured ? "View" : "Configure"}
           </Button>
         </div>
       </CardContent>
@@ -482,7 +496,15 @@ export default function SettingsPage() {
   const integrationConfigured: Record<string, boolean> = {
     "Amazon SP-API": status?.amazon_sp?.configured ?? false,
     "Amazon Ads": status?.amazon_ads?.configured ?? false,
-    "Meta Ads": status?.meta_ads?.configured ?? false,
+    "Meta Ads": status?.meta_ads?.connected ?? false,
+  };
+
+  // What each integration powers in the dashboard
+  const integrationPowers: Record<string, string[]> = {
+    "Shopify": ["Total Revenue KPI", "Forecast table", "SKU Detail table"],
+    "Amazon SP-API": ["Revenue (Amazon channel)", "SKU data", "Order tracking"],
+    "Amazon Ads": ["Amazon ad spend", "Amazon ROAS"],
+    "Meta Ads": ["Ad Spend KPI & table", "CAC calculations", "Campaign insights"],
   };
 
   const n8nUrl = status?.n8n?.url || "https://pblcrmn.app.n8n.cloud";
@@ -628,6 +650,7 @@ export default function SettingsPage() {
                   integration={integration}
                   isConfigured={integrationConfigured[integration.name]}
                   onConfigure={() => setConfigureModal(integration.name)}
+                  powers={integrationPowers[integration.name]}
                 />
               )}
             </div>

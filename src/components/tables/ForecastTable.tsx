@@ -10,6 +10,7 @@ import { MOCK_FORECAST_TABLE } from "@/lib/mock-data";
 import { formatNumber, formatMonth, exportToCSV } from "@/lib/utils";
 import { Download, ArrowUpDown, FileDown, Search } from "lucide-react";
 import { useDashboardStore } from "@/stores/dashboard-store";
+import { SourceBadge } from "@/components/layout/SourceBadge";
 import { getMonthsForTimeRange, filterForecastByTimeRange } from "@/lib/utils/filters";
 import { exportToPDF } from "@/lib/utils/pdf";
 import { useToast } from "@/components/ui/toast";
@@ -18,6 +19,7 @@ type SortKey = "month" | "forecast_baseline" | "actual" | "accuracy_pct";
 
 export function ForecastTable() {
   const { filters, shopifyConnected, supabaseConnected } = useDashboardStore();
+  const forecastSource = supabaseConnected ? "supabase" : shopifyConnected ? "shopify" : "mock" as const;
   const [sortKey, setSortKey] = useState<SortKey>("month");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
   const { toast } = useToast();
@@ -110,7 +112,7 @@ export function ForecastTable() {
   return (
     <Card>
       <CardHeader className="flex flex-row items-center justify-between pb-4">
-        <CardTitle className="text-lg">Forecast vs Actual</CardTitle>
+        <CardTitle className="text-lg flex items-center gap-2">Forecast vs Actual <SourceBadge source={forecastSource} size="sm" /></CardTitle>
         <div className="flex gap-2">
           <Button variant="outline" size="sm" onClick={handlePDFExport}>
             <FileDown className="mr-2 h-3 w-3" />
