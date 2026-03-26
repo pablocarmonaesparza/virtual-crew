@@ -7,6 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ForecastTable } from "@/components/tables/ForecastTable";
 import { SKUTable } from "@/components/tables/SKUTable";
 import { AdSpendTable } from "@/components/tables/AdSpendTable";
+import { CampaignTable } from "@/components/tables/CampaignTable";
 import { CACTable } from "@/components/tables/CACTable";
 import { ForecastChart } from "@/components/charts/ForecastChart";
 import { AdSpendChart } from "@/components/charts/AdSpendChart";
@@ -115,6 +116,7 @@ export default function DashboardPage() {
             <AdSpendChart />
             <AdSpendTable />
           </div>
+          <CampaignTable />
         </TabsContent>
 
         <TabsContent value="cac" className="space-y-6">

@@ -55,10 +55,9 @@ function buildForecastContext() {
     };
   });
 
-  // Compute ad spend summary
+  // Compute ad spend summary (no budget data available — report actuals only)
   const recentAdSpend = MOCK_AD_SPEND_TABLE.filter((r) => r.month >= "2026-01" && r.month <= "2026-03");
-  const totalActualSpend = recentAdSpend.reduce((sum, r) => sum + r.spend_actual, 0);
-  const totalBudgetSpend = recentAdSpend.reduce((sum, r) => sum + r.spend_budgeted, 0);
+  const totalActualSpend = recentAdSpend.reduce((sum, r) => sum + r.spend, 0);
 
   return {
     kpi: {
@@ -72,10 +71,7 @@ function buildForecastContext() {
     engine_forecasts: forecasts,
     ad_spend_summary: {
       q1_actual: totalActualSpend,
-      q1_budget: totalBudgetSpend,
-      variance_pct: totalBudgetSpend > 0
-        ? Math.round(((totalActualSpend - totalBudgetSpend) / totalBudgetSpend) * 100 * 10) / 10
-        : 0,
+      note: "Budget data not available — showing actual spend only",
     },
     historical_performance: historicalRows.map((r) => ({
       month: r.month,

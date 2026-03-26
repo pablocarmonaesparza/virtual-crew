@@ -21,10 +21,10 @@ function getAdSpendForMonth(month: string) {
   const meta = rows.find((r) => r.platform === "Meta Ads");
   const amazon = rows.find((r) => r.platform === "Amazon Ads");
   return {
-    metaBudget: meta?.spend_budgeted ?? 0,
-    metaActual: meta?.spend_actual ?? 0,
-    amazonBudget: amazon?.spend_budgeted ?? 0,
-    amazonActual: amazon?.spend_actual ?? 0,
+    metaBudget: meta?.spend ?? 0,
+    metaActual: meta?.spend ?? 0,
+    amazonBudget: amazon?.spend ?? 0,
+    amazonActual: amazon?.spend ?? 0,
   };
 }
 
@@ -36,7 +36,7 @@ function getBaselineForecastForMonth(month: string) {
 function getHistoricalAvgAdSpend(): number {
   const historicalMonths = MOCK_AD_SPEND_TABLE.filter((r) => r.month < "2026-03");
   if (historicalMonths.length === 0) return 0;
-  const totalSpend = historicalMonths.reduce((sum, r) => sum + r.spend_actual, 0);
+  const totalSpend = historicalMonths.reduce((sum, r) => sum + r.spend, 0);
   const uniqueMonths = new Set(historicalMonths.map((r) => r.month)).size;
   return uniqueMonths > 0 ? totalSpend / uniqueMonths : 0;
 }
@@ -137,7 +137,7 @@ export function AdBudgetSimulator() {
               Ad Budget Simulator
             </CardTitle>
             <CardDescription>
-              Adjust ad budgets for {monthLabel} to see projected impact on sales forecast
+              Adjust planned ad spend for {monthLabel} to see projected impact on sales forecast
             </CardDescription>
           </div>
           <Badge variant="outline" className="text-xs">

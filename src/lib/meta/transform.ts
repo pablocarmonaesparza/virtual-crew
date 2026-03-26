@@ -7,13 +7,11 @@ import type { MetaMonthlyInsight } from "./client";
 
 /**
  * Transform Meta monthly insights into AdSpendTableRow[] for the Ad Spend table.
- * Since we don't have "budgeted" data from the Meta API, we estimate
- * the budget as the previous month's actual spend (MoM comparison).
+ * Uses real Meta API metrics: spend, impressions, clicks, CTR, CPC, CPM, purchases, ROAS.
  */
 export function transformMetaToAdSpendRows(
   insights: MetaMonthlyInsight[]
 ): AdSpendTableRow[] {
-  // Sort by month ascending
   const sorted = [...insights].sort((a, b) => a.month.localeCompare(b.month));
 
   return sorted.map((row, idx) => {
@@ -25,10 +23,14 @@ export function transformMetaToAdSpendRows(
     return {
       month: row.month,
       platform: "Meta Ads",
-      spend_actual: Math.round(row.spend * 100) / 100,
-      spend_budgeted: -1, // -1 signals "no budget data" (displayed as "—" in table)
-      variance: 0,
-      variance_pct: 0,
+      spend: Math.round(row.spend * 100) / 100,
+      impressions: row.impressions,
+      clicks: row.clicks,
+      ctr: Math.round(row.ctr * 100) / 100,
+      cpc: Math.round(row.cpc * 100) / 100,
+      cpm: Math.round(row.cpm * 100) / 100,
+      purchases: row.purchases,
+      roas: Math.round(row.roas * 100) / 100,
       mom_trend: Math.round(momTrend * 10) / 10,
     };
   });
@@ -71,24 +73,25 @@ export function mergeAdSpendData(
 }
 
 /**
- * Build chart-compatible data from Meta insights.
- * Returns data matching the AdSpendChart expected format.
+ * Build chart-compatible data from Meta insights for the Ad Spend chart.
+ * Returns spend + ROAS per month for trend visualization.
  */
 export function transformMetaToChartData(
   insights: MetaMonthlyInsight[]
-): { month: string; meta_actual: number; meta_budget: number }[] {
+): { month: string; meta_spend: number; meta_roas: number; meta_ctr: number; meta_purchases: number }[] {
   return insights
     .sort((a, b) => a.month.localeCompare(b.month))
     .map((row) => {
-      // Format month label: "Oct 25", "Nov 25", etc.
       const [year, monthNum] = row.month.split("-");
       const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
       const label = `${monthNames[parseInt(monthNum) - 1]} ${year.slice(2)}`;
 
       return {
         month: label,
-        meta_actual: Math.round(row.spend),
-        meta_budget: 0, // No budget data from API
+        meta_spend: Math.round(row.spend),
+        meta_roas: Math.round(row.roas * 100) / 100,
+        meta_ctr: Math.round(row.ctr * 100) / 100,
+        meta_purchases: row.purchases,
       };
     });
 }

@@ -75,18 +75,18 @@ export const MOCK_SKU_TABLE: SKUTableRow[] = MOCK_SKUS.map((sku) => ({
 }));
 
 export const MOCK_AD_SPEND_TABLE: AdSpendTableRow[] = [
-  { month: "2025-10", platform: "Meta Ads", spend_actual: 8200, spend_budgeted: 8000, variance: 200, variance_pct: 2.5, mom_trend: 0 },
-  { month: "2025-10", platform: "Amazon Ads", spend_actual: 5100, spend_budgeted: 5500, variance: -400, variance_pct: -7.3, mom_trend: 0 },
-  { month: "2025-11", platform: "Meta Ads", spend_actual: 8800, spend_budgeted: 8500, variance: 300, variance_pct: 3.5, mom_trend: 7.3 },
-  { month: "2025-11", platform: "Amazon Ads", spend_actual: 5400, spend_budgeted: 5500, variance: -100, variance_pct: -1.8, mom_trend: 5.9 },
-  { month: "2025-12", platform: "Meta Ads", spend_actual: 10200, spend_budgeted: 10000, variance: 200, variance_pct: 2.0, mom_trend: 15.9 },
-  { month: "2025-12", platform: "Amazon Ads", spend_actual: 6800, spend_budgeted: 7000, variance: -200, variance_pct: -2.9, mom_trend: 25.9 },
-  { month: "2026-01", platform: "Meta Ads", spend_actual: 9100, spend_budgeted: 9000, variance: 100, variance_pct: 1.1, mom_trend: -10.8 },
-  { month: "2026-01", platform: "Amazon Ads", spend_actual: 5800, spend_budgeted: 6000, variance: -200, variance_pct: -3.3, mom_trend: -14.7 },
-  { month: "2026-02", platform: "Meta Ads", spend_actual: 8600, spend_budgeted: 8500, variance: 100, variance_pct: 1.2, mom_trend: -5.5 },
-  { month: "2026-02", platform: "Amazon Ads", spend_actual: 5500, spend_budgeted: 5800, variance: -300, variance_pct: -5.2, mom_trend: -5.2 },
-  { month: "2026-03", platform: "Meta Ads", spend_actual: 5200, spend_budgeted: 9000, variance: -3800, variance_pct: -42.2, mom_trend: -39.5 },
-  { month: "2026-03", platform: "Amazon Ads", spend_actual: 3400, spend_budgeted: 6000, variance: -2600, variance_pct: -43.3, mom_trend: -38.2 },
+  { month: "2025-10", platform: "Meta Ads", spend: 8200, impressions: 640000, clicks: 7500, ctr: 1.17, cpc: 1.09, cpm: 12.81, purchases: 268, roas: 0, mom_trend: 0 },
+  { month: "2025-10", platform: "Amazon Ads", spend: 5100, impressions: 320000, clicks: 4800, ctr: 1.50, cpc: 1.06, cpm: 15.94, purchases: 180, roas: 3.2, mom_trend: 0 },
+  { month: "2025-11", platform: "Meta Ads", spend: 8800, impressions: 550000, clicks: 6900, ctr: 1.25, cpc: 1.28, cpm: 16.00, purchases: 252, roas: 0, mom_trend: 7.3 },
+  { month: "2025-11", platform: "Amazon Ads", spend: 5400, impressions: 340000, clicks: 5100, ctr: 1.50, cpc: 1.06, cpm: 15.88, purchases: 195, roas: 3.4, mom_trend: 5.9 },
+  { month: "2025-12", platform: "Meta Ads", spend: 10200, impressions: 720000, clicks: 8300, ctr: 1.15, cpc: 1.23, cpm: 14.17, purchases: 385, roas: 0, mom_trend: 15.9 },
+  { month: "2025-12", platform: "Amazon Ads", spend: 6800, impressions: 420000, clicks: 6300, ctr: 1.50, cpc: 1.08, cpm: 16.19, purchases: 240, roas: 3.1, mom_trend: 25.9 },
+  { month: "2026-01", platform: "Meta Ads", spend: 9100, impressions: 610000, clicks: 7100, ctr: 1.16, cpc: 1.28, cpm: 14.92, purchases: 260, roas: 0, mom_trend: -10.8 },
+  { month: "2026-01", platform: "Amazon Ads", spend: 5800, impressions: 360000, clicks: 5400, ctr: 1.50, cpc: 1.07, cpm: 16.11, purchases: 210, roas: 3.3, mom_trend: -14.7 },
+  { month: "2026-02", platform: "Meta Ads", spend: 8600, impressions: 580000, clicks: 7300, ctr: 1.26, cpc: 1.18, cpm: 14.83, purchases: 220, roas: 0, mom_trend: -5.5 },
+  { month: "2026-02", platform: "Amazon Ads", spend: 5500, impressions: 350000, clicks: 5200, ctr: 1.49, cpc: 1.06, cpm: 15.71, purchases: 198, roas: 3.2, mom_trend: -5.2 },
+  { month: "2026-03", platform: "Meta Ads", spend: 5200, impressions: 380000, clicks: 4600, ctr: 1.21, cpc: 1.13, cpm: 13.68, purchases: 112, roas: 0, mom_trend: -39.5 },
+  { month: "2026-03", platform: "Amazon Ads", spend: 3400, impressions: 220000, clicks: 3300, ctr: 1.50, cpc: 1.03, cpm: 15.45, purchases: 125, roas: 3.0, mom_trend: -38.2 },
 ];
 
 export const MOCK_CAC_TABLE: CACTableRow[] = [

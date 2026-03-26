@@ -42,6 +42,7 @@ import {
   transformMetaToCACContribution,
   getMetaKPISummary,
 } from "@/lib/meta/transform";
+import { calculateRealCAC } from "@/lib/cac/calculator";
 
 // ── Connection checks ──
 
@@ -385,10 +386,30 @@ export async function getAdSpendData(
 export async function getCACData(
   filters?: Partial<DashboardFilters>
 ): Promise<CACTableRow[]> {
-  // CAC data currently comes from Shopify + mock — Supabase doesn't have a
-  // dedicated CAC table yet, so we keep existing logic but could derive from
-  // sales_daily + ad_daily_spend in the future.
+  // Try real Meta-based CAC first
+  const metaInsights = await getMetaInsightsForFilters(filters);
+  if (metaInsights && metaInsights.length > 0) {
+    const metaCACRows = calculateRealCAC(metaInsights);
 
+    // If channel filter excludes Meta, skip
+    if (filters?.channel === "amazon") {
+      // Only Amazon mock rows when Meta is filtered out
+      return applyCACFilters(MOCK_CAC_TABLE.filter((r) => r.channel === "Amazon"), filters);
+    }
+
+    // Add Amazon mock rows if channel allows
+    if (!filters?.channel || filters.channel === "all") {
+      const amazonMockRows = MOCK_CAC_TABLE.filter((r) => r.channel === "Amazon");
+      return [...metaCACRows, ...amazonMockRows].sort((a, b) => {
+        const mc = a.month.localeCompare(b.month);
+        return mc !== 0 ? mc : a.channel.localeCompare(b.channel);
+      });
+    }
+
+    return metaCACRows;
+  }
+
+  // Fallback: Try Shopify
   const connected = await isShopifyConnected();
 
   if (!connected) {

@@ -444,17 +444,18 @@ export async function getAdSpendFromDB(
     }
 
     // Aggregate by month + platform
-    const agg = new Map<string, { spend: number; impressions: number; clicks: number; conversions: number }>();
+    const agg = new Map<string, { spend: number; impressions: number; clicks: number; conversions: number; revenue_attributed: number }>();
 
     for (const row of data) {
       const mk = monthKey(row.spend_date);
       const platformLabel = platformDisplayName(row.platform);
       const key = `${mk}|${platformLabel}`;
-      const existing = agg.get(key) || { spend: 0, impressions: 0, clicks: 0, conversions: 0 };
+      const existing = agg.get(key) || { spend: 0, impressions: 0, clicks: 0, conversions: 0, revenue_attributed: 0 };
       existing.spend += Number(row.spend ?? 0);
       existing.impressions += row.impressions ?? 0;
       existing.clicks += row.clicks ?? 0;
       existing.conversions += row.conversions ?? 0;
+      existing.revenue_attributed += Number(row.revenue_attributed ?? 0);
       agg.set(key, existing);
     }
 
@@ -473,10 +474,14 @@ export async function getAdSpendFromDB(
       rows.push({
         month,
         platform,
-        spend_actual: Math.round(vals.spend),
-        spend_budgeted: Math.round(vals.spend), // No budget data in table — use actual as placeholder
-        variance: 0,
-        variance_pct: 0,
+        spend: Math.round(vals.spend),
+        impressions: vals.impressions ?? 0,
+        clicks: vals.clicks ?? 0,
+        ctr: vals.clicks && vals.impressions ? Math.round((vals.clicks / vals.impressions) * 10000) / 100 : 0,
+        cpc: vals.clicks ? Math.round((vals.spend / vals.clicks) * 100) / 100 : 0,
+        cpm: vals.impressions ? Math.round((vals.spend / vals.impressions * 1000) * 100) / 100 : 0,
+        purchases: vals.conversions ?? 0,
+        roas: vals.revenue_attributed && vals.spend ? Math.round((vals.revenue_attributed / vals.spend) * 100) / 100 : 0,
         mom_trend: momTrend,
       });
     }

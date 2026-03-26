@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { MOCK_AD_SPEND_TABLE } from "@/lib/mock-data";
-import { formatCurrency, formatPercent, formatMonth, exportToCSV } from "@/lib/utils";
+import { formatCurrency, formatPercent, formatMonth, formatNumber, exportToCSV } from "@/lib/utils";
 import { Download, Search } from "lucide-react";
 import { useDashboardStore } from "@/stores/dashboard-store";
 import { SourceBadge } from "@/components/layout/SourceBadge";
@@ -21,8 +21,6 @@ import type { AdSpendTableRow } from "@/types";
 export function AdSpendTable() {
   const { filters, metaConnected, shopifyConnected, supabaseConnected } = useDashboardStore();
   const { toast } = useToast();
-
-  const anyLiveSource = metaConnected || shopifyConnected || supabaseConnected;
 
   // Fetch live ad spend data when Meta is connected
   const { data: liveAdSpend } = useQuery<AdSpendTableRow[]>({
@@ -59,23 +57,24 @@ export function AdSpendTable() {
       data.map((r) => ({
         Month: formatMonth(r.month),
         Platform: r.platform,
-        "Spend Actual": r.spend_actual,
-        "Spend Budgeted": r.spend_budgeted,
-        Variance: r.variance,
-        "Variance %": `${r.variance_pct}%`,
+        Spend: r.spend,
+        Impressions: r.impressions,
+        Clicks: r.clicks,
+        "CTR %": `${r.ctr}%`,
+        CPC: r.cpc,
+        Purchases: r.purchases,
+        ROAS: r.roas,
         "MoM Trend %": `${r.mom_trend}%`,
       })),
-      "ad-spend-vs-budget"
+      "ad-spend-performance"
     );
     toast("CSV exported successfully");
   };
 
-  const uniqueMonths = [...new Set(data.map((d) => d.month))];
-
   return (
     <Card>
       <CardHeader className="flex flex-row items-center justify-between pb-4">
-        <CardTitle className="text-lg flex items-center gap-2">Ad Spend vs Budget <SourceBadge source={metaConnected ? "meta" : "mock"} size="sm" /></CardTitle>
+        <CardTitle className="text-lg flex items-center gap-2">Ad Spend Performance <SourceBadge source={metaConnected ? "meta" : "mock"} size="sm" /></CardTitle>
         <Button variant="outline" size="sm" onClick={handleExport}>
           <Download className="mr-2 h-3 w-3" />
           CSV
@@ -90,7 +89,7 @@ export function AdSpendTable() {
           </div>
         ) : (
         <div className="overflow-x-auto">
-          <table className="w-full text-sm" role="table">
+          <table className="w-full text-sm min-w-[900px]" role="table">
             <thead>
               <tr className="border-b border-border/40">
                 <th className="pb-3 text-left">
@@ -100,16 +99,25 @@ export function AdSpendTable() {
                   <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Platform</span>
                 </th>
                 <th className="pb-3 text-right">
-                  <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Actual</span>
+                  <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Spend</span>
                 </th>
                 <th className="pb-3 text-right">
-                  <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Budget</span>
+                  <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Impressions</span>
                 </th>
                 <th className="pb-3 text-right">
-                  <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Variance</span>
+                  <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Clicks</span>
                 </th>
                 <th className="pb-3 text-right">
-                  <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Var %</span>
+                  <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">CTR</span>
+                </th>
+                <th className="pb-3 text-right">
+                  <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">CPC</span>
+                </th>
+                <th className="pb-3 text-right">
+                  <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Purchases</span>
+                </th>
+                <th className="pb-3 text-right">
+                  <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">ROAS</span>
                 </th>
                 <th className="pb-3 text-right">
                   <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">MoM</span>
@@ -135,28 +143,32 @@ export function AdSpendTable() {
                       </Badge>
                     </td>
                     <td className="py-2.5 text-right tabular-nums font-medium">
-                      {formatCurrency(row.spend_actual)}
+                      {formatCurrency(row.spend)}
                     </td>
                     <td className="py-2.5 text-right tabular-nums text-muted-foreground">
-                      {row.spend_budgeted < 0 ? "—" : formatCurrency(row.spend_budgeted)}
+                      {formatNumber(row.impressions)}
+                    </td>
+                    <td className="py-2.5 text-right tabular-nums text-muted-foreground">
+                      {formatNumber(row.clicks)}
                     </td>
                     <td className="py-2.5 text-right tabular-nums">
-                      {row.spend_budgeted < 0 ? (
-                        <span className="text-muted-foreground">—</span>
-                      ) : (
-                        <span className={row.variance >= 0 ? "text-red-600" : "text-green-600"}>
-                          {formatCurrency(Math.abs(row.variance))}
-                          {row.variance >= 0 ? " over" : " under"}
-                        </span>
-                      )}
+                      <span className={row.ctr >= 1.5 ? "text-green-600" : row.ctr < 1.0 ? "text-red-600" : "text-foreground"}>
+                        {row.ctr.toFixed(2)}%
+                      </span>
                     </td>
-                    <td className="py-2.5 text-right">
-                      {row.spend_budgeted < 0 ? (
-                        <span className="text-muted-foreground">—</span>
-                      ) : (
-                        <span className={row.variance_pct > 5 ? "text-red-600" : row.variance_pct < -5 ? "text-amber-600" : "text-green-600"}>
-                          {formatPercent(row.variance_pct)}
+                    <td className="py-2.5 text-right tabular-nums text-muted-foreground">
+                      £{row.cpc.toFixed(2)}
+                    </td>
+                    <td className="py-2.5 text-right tabular-nums font-medium">
+                      {formatNumber(row.purchases)}
+                    </td>
+                    <td className="py-2.5 text-right tabular-nums">
+                      {row.roas > 0 ? (
+                        <span className={row.roas >= 3.0 ? "text-green-600 font-medium" : row.roas < 2.0 ? "text-red-600" : "text-foreground"}>
+                          {row.roas.toFixed(2)}x
                         </span>
+                      ) : (
+                        <span className="text-muted-foreground">—</span>
                       )}
                     </td>
                     <td className="py-2.5 text-right">

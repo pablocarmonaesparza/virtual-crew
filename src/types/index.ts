@@ -190,11 +190,29 @@ export interface SKUTableRow {
 export interface AdSpendTableRow {
   month: string;
   platform: string;
-  spend_actual: number;
-  spend_budgeted: number;
-  variance: number;
-  variance_pct: number;
+  spend: number;
+  impressions: number;
+  clicks: number;
+  ctr: number;
+  cpc: number;
+  cpm: number;
+  purchases: number;
+  roas: number;
   mom_trend: number;
+}
+
+export interface CampaignPerformanceRow {
+  campaign_id: string;
+  campaign_name: string;
+  month: string;
+  spend: number;
+  impressions: number;
+  clicks: number;
+  purchases: number;
+  ctr: number;
+  cpc: number;
+  roas: number;
+  spend_share_pct: number;
 }
 
 export interface CACTableRow {

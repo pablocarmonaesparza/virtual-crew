@@ -145,8 +145,8 @@ export function KPIBar() {
       MOCK_AD_SPEND_TABLE.filter((r) => r.month === prevMonth),
       filters.adsPlatform
     );
-    const totalAdSpend = currentAdSpend.reduce((sum, r) => sum + r.spend_actual, 0);
-    const prevTotalAdSpend = prevAdSpend.reduce((sum, r) => sum + r.spend_actual, 0);
+    const totalAdSpend = currentAdSpend.reduce((sum, r) => sum + r.spend, 0);
+    const prevTotalAdSpend = prevAdSpend.reduce((sum, r) => sum + r.spend, 0);
     const adSpendMom = prevTotalAdSpend > 0 ? Math.round(((totalAdSpend - prevTotalAdSpend) / prevTotalAdSpend) * 1000) / 10 : 0;
 
     // --- CAC (filtered by channel) ---

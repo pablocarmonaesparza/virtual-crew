@@ -149,9 +149,9 @@ describe('getAdSpendData', () => {
     for (const row of result) {
       expect(row).toHaveProperty('month')
       expect(row).toHaveProperty('platform')
-      expect(row).toHaveProperty('spend_actual')
-      expect(row).toHaveProperty('spend_budgeted')
-      expect(row).toHaveProperty('variance')
+      expect(row).toHaveProperty('spend')
+      expect(row).toHaveProperty('impressions')
+      expect(row).toHaveProperty('clicks')
     }
   })
 
