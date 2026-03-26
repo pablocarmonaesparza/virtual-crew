@@ -316,9 +316,9 @@ export async function getKPIData(
   if (metaInsights && metaInsights.length > 0) {
     const metaKPI = getMetaKPISummary(metaInsights);
     kpi.total_ad_spend = metaKPI.total_spend;
-    kpi.ad_spend_mom_change = metaKPI.mom_change;
+    kpi.ad_spend_mom_change = metaKPI.spend_mom_change;
     kpi.average_cac = metaKPI.avg_cac;
-    kpi.cac_mom_change = metaKPI.mom_change;
+    kpi.cac_mom_change = metaKPI.cac_mom_change;
   }
 
   return kpi;

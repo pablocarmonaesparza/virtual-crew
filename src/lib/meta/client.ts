@@ -137,11 +137,31 @@ export async function getCampaignInsights(
   }
 
   const response = await res.json();
-  return response.data.map((row: MetaInsightsRow & { campaign_id: string; campaign_name: string }) => ({
-    ...parseInsightsRow(row),
-    campaign_id: row.campaign_id,
-    campaign_name: row.campaign_name,
-  }));
+  const results: MetaCampaignInsight[] = response.data.map(
+    (row: MetaInsightsRow & { campaign_id: string; campaign_name: string }) => ({
+      ...parseInsightsRow(row),
+      campaign_id: row.campaign_id,
+      campaign_name: row.campaign_name,
+    })
+  );
+
+  // Follow pagination
+  let nextUrl = response.paging?.next;
+  while (nextUrl && results.length < limit) {
+    const nextRes = await fetch(nextUrl);
+    if (!nextRes.ok) break;
+    const nextPage = await nextRes.json();
+    for (const row of nextPage.data || []) {
+      results.push({
+        ...parseInsightsRow(row),
+        campaign_id: row.campaign_id,
+        campaign_name: row.campaign_name,
+      });
+    }
+    nextUrl = nextPage.paging?.next;
+  }
+
+  return results;
 }
 
 /**

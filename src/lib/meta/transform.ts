@@ -26,7 +26,7 @@ export function transformMetaToAdSpendRows(
       month: row.month,
       platform: "Meta Ads",
       spend_actual: Math.round(row.spend * 100) / 100,
-      spend_budgeted: 0, // No budget data from Meta API
+      spend_budgeted: -1, // -1 signals "no budget data" (displayed as "—" in table)
       variance: 0,
       variance_pct: 0,
       mom_trend: Math.round(momTrend * 10) / 10,
@@ -102,29 +102,35 @@ export function getMetaKPISummary(insights: MetaMonthlyInsight[]): {
   avg_cac: number;
   avg_roas: number;
   latest_month_spend: number;
-  mom_change: number;
+  spend_mom_change: number;
+  cac_mom_change: number;
 } {
   if (insights.length === 0) {
-    return { total_spend: 0, total_purchases: 0, avg_cac: 0, avg_roas: 0, latest_month_spend: 0, mom_change: 0 };
+    return { total_spend: 0, total_purchases: 0, avg_cac: 0, avg_roas: 0, latest_month_spend: 0, spend_mom_change: 0, cac_mom_change: 0 };
   }
 
   const sorted = [...insights].sort((a, b) => a.month.localeCompare(b.month));
-  const totalSpend = sorted.reduce((sum, r) => sum + r.spend, 0);
-  const totalPurchases = sorted.reduce((sum, r) => sum + r.purchases, 0);
-  const totalRevenue = sorted.reduce((sum, r) => sum + r.purchase_value, 0);
 
+  // Use latest month only (matches Shopify/mock KPI semantics)
   const latest = sorted[sorted.length - 1];
   const prev = sorted.length > 1 ? sorted[sorted.length - 2] : null;
-  const momChange = prev && prev.spend > 0
+
+  const spendMomChange = prev && prev.spend > 0
     ? ((latest.spend - prev.spend) / prev.spend) * 100
     : 0;
 
+  // CAC MoM is derived from CAC values, not spend
+  const cacMomChange = prev && prev.cac > 0
+    ? ((latest.cac - prev.cac) / prev.cac) * 100
+    : 0;
+
   return {
-    total_spend: totalSpend,
-    total_purchases: totalPurchases,
-    avg_cac: totalPurchases > 0 ? totalSpend / totalPurchases : 0,
-    avg_roas: totalSpend > 0 ? totalRevenue / totalSpend : 0,
+    total_spend: latest.spend, // Latest month only
+    total_purchases: latest.purchases,
+    avg_cac: latest.cac, // Latest month CAC
+    avg_roas: latest.roas,
     latest_month_spend: latest.spend,
-    mom_change: momChange,
+    spend_mom_change: spendMomChange,
+    cac_mom_change: cacMomChange,
   };
 }

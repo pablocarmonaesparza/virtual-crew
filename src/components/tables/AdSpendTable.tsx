@@ -28,21 +28,10 @@ export function AdSpendTable() {
   const { data: liveAdSpend } = useQuery<AdSpendTableRow[]>({
     queryKey: ["adspend", filters.selectedMonth, filters.timeRange, filters.adsPlatform, metaConnected, supabaseConnected],
     queryFn: async () => {
-      const params = new URLSearchParams({
-        month: filters.selectedMonth,
-        platform: filters.adsPlatform,
-        timeRange: filters.timeRange,
-      });
-      const res = await fetch(`/api/kpi?${params}&type=adspend`);
-      if (!res.ok) {
-        // Try the meta insights endpoint directly
-        const metaRes = await fetch("/api/meta/insights");
-        if (!metaRes.ok) throw new Error("Failed to fetch ad spend");
-        const metaData = await metaRes.json();
-        return metaData.ad_spend_rows || [];
-      }
+      const res = await fetch("/api/meta/insights");
+      if (!res.ok) throw new Error("Failed to fetch Meta ad spend");
       const data = await res.json();
-      return data.adSpendRows || [];
+      return data.ad_spend_rows || [];
     },
     enabled: metaConnected,
     staleTime: 5 * 60 * 1000,
@@ -149,18 +138,26 @@ export function AdSpendTable() {
                       {formatCurrency(row.spend_actual)}
                     </td>
                     <td className="py-2.5 text-right tabular-nums text-muted-foreground">
-                      {formatCurrency(row.spend_budgeted)}
+                      {row.spend_budgeted < 0 ? "—" : formatCurrency(row.spend_budgeted)}
                     </td>
                     <td className="py-2.5 text-right tabular-nums">
-                      <span className={row.variance >= 0 ? "text-red-600" : "text-green-600"}>
-                        {formatCurrency(Math.abs(row.variance))}
-                        {row.variance >= 0 ? " over" : " under"}
-                      </span>
+                      {row.spend_budgeted < 0 ? (
+                        <span className="text-muted-foreground">—</span>
+                      ) : (
+                        <span className={row.variance >= 0 ? "text-red-600" : "text-green-600"}>
+                          {formatCurrency(Math.abs(row.variance))}
+                          {row.variance >= 0 ? " over" : " under"}
+                        </span>
+                      )}
                     </td>
                     <td className="py-2.5 text-right">
-                      <span className={row.variance_pct > 5 ? "text-red-600" : row.variance_pct < -5 ? "text-amber-600" : "text-green-600"}>
-                        {formatPercent(row.variance_pct)}
-                      </span>
+                      {row.spend_budgeted < 0 ? (
+                        <span className="text-muted-foreground">—</span>
+                      ) : (
+                        <span className={row.variance_pct > 5 ? "text-red-600" : row.variance_pct < -5 ? "text-amber-600" : "text-green-600"}>
+                          {formatPercent(row.variance_pct)}
+                        </span>
+                      )}
                     </td>
                     <td className="py-2.5 text-right">
                       {row.mom_trend !== 0 ? (
