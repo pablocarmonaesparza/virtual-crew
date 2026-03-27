@@ -198,7 +198,8 @@ export function transformOrdersToForecast(
 // ── Transform orders into SKUTableRow[] ──
 
 export function transformOrdersToSKUTable(
-  orders: ShopifyOrder[]
+  orders: ShopifyOrder[],
+  productCatalog?: { sku_id: string; sku_title: string; product_type: string; category: string }[]
 ): SKUTableRow[] {
   // Group by SKU then by month
   const skuMap = new Map<
@@ -232,8 +233,9 @@ export function transformOrdersToSKUTable(
   const rows: SKUTableRow[] = [];
 
   for (const [skuId, entry] of skuMap) {
-    // Try to find this SKU in our known SKU catalog
-    const knownSku = MOCK_SKUS.find((s) => s.sku_id === skuId);
+    // Try to find this SKU in provided catalog, fallback to mock
+    const knownSku = productCatalog?.find((s) => s.sku_id === skuId)
+      || MOCK_SKUS.find((s) => s.sku_id === skuId);
 
     const allMonths = Array.from(entry.months.keys()).sort();
     const monthsRecord: SKUTableRow["months"] = {};

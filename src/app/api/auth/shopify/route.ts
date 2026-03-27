@@ -1,15 +1,29 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import crypto from "crypto";
 
-export async function GET() {
+/**
+ * Shopify OAuth initiation.
+ * Accepts optional ?shop= parameter for multi-tenant use.
+ * Falls back to SHOPIFY_STORE_URL env var for single-tenant.
+ */
+export async function GET(request: NextRequest) {
   const clientId = process.env.SHOPIFY_CLIENT_ID;
-  const shopUrl = process.env.SHOPIFY_STORE_URL;
+  const { searchParams } = new URL(request.url);
+  const shopUrl = searchParams.get("shop") || process.env.SHOPIFY_STORE_URL;
   const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
 
   if (!clientId || !shopUrl) {
     return NextResponse.json(
-      { error: "Missing Shopify configuration" },
-      { status: 500 }
+      { error: "Missing Shopify configuration. Provide ?shop=yourstore.myshopify.com" },
+      { status: 400 }
+    );
+  }
+
+  // Validate shop URL format
+  if (!shopUrl.endsWith(".myshopify.com")) {
+    return NextResponse.json(
+      { error: "Invalid shop URL. Must be in format: yourstore.myshopify.com" },
+      { status: 400 }
     );
   }
 
@@ -28,7 +42,15 @@ export async function GET() {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
     sameSite: "lax",
-    maxAge: 600, // 10 minutes
+    maxAge: 600,
+    path: "/",
+  });
+  // Store the shop URL in cookie so callback knows which shop to use
+  response.cookies.set("shopify_oauth_shop", shopUrl, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax",
+    maxAge: 600,
     path: "/",
   });
 

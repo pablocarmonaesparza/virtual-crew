@@ -119,21 +119,44 @@ async function getTokenFromSupabase(): Promise<string | null> {
 }
 
 async function getAccessToken(): Promise<string | null> {
-  // 1. Prefer env variable
+  // 1. Prefer env variable (local dev override)
   const envToken = getTokenFromEnv();
   if (envToken) return envToken;
 
-  // 2. Try file (works in local dev)
+  // 2. Try Supabase api_credentials table (production — Vercel compatible)
+  const supabaseToken = await getTokenFromSupabase();
+  if (supabaseToken) return supabaseToken;
+
+  // 3. Fallback to file (legacy local dev)
   const fileData = await getTokenFromFile();
   if (fileData?.access_token) return fileData.access_token;
 
-  // 3. Try Supabase api_credentials table (works on Vercel)
-  const supabaseToken = await getTokenFromSupabase();
-  return supabaseToken;
+  return null;
 }
 
-function getShopUrl(): string {
-  return process.env.SHOPIFY_STORE_URL || "";
+async function getShopUrl(): Promise<string> {
+  // 1. Prefer env variable
+  if (process.env.SHOPIFY_STORE_URL) return process.env.SHOPIFY_STORE_URL;
+
+  // 2. Try Supabase api_credentials (matches token storage)
+  try {
+    const supabase = createAdminClient();
+    if (supabase) {
+      const { data } = await supabase
+        .from("api_credentials")
+        .select("credential_value")
+        .eq("platform", "shopify")
+        .eq("credential_name", "store_url")
+        .eq("is_active", true)
+        .limit(1)
+        .single();
+      if (data?.credential_value) return data.credential_value as string;
+    }
+  } catch {
+    // Fall through
+  }
+
+  return "";
 }
 
 // ── Rate limiter ──
@@ -178,7 +201,7 @@ async function shopifyRequest<T>(options: ShopifyRequestOptions): Promise<T> {
     throw new Error("No Shopify access token available");
   }
 
-  const shopUrl = getShopUrl();
+  const shopUrl = await getShopUrl();
   if (!shopUrl) {
     throw new Error("SHOPIFY_STORE_URL is not configured");
   }
@@ -223,7 +246,7 @@ async function shopifyPaginatedRequest<T extends Record<string, unknown>>(
   const accessToken = await getAccessToken();
   if (!accessToken) throw new Error("No Shopify access token available");
 
-  const shopUrl = getShopUrl();
+  const shopUrl = await getShopUrl();
   if (!shopUrl) throw new Error("SHOPIFY_STORE_URL is not configured");
 
   // First request
@@ -288,7 +311,7 @@ export async function isShopifyConnected(): Promise<boolean> {
 export async function getShopInfo(): Promise<string | null> {
   const connected = await isShopifyConnected();
   if (!connected) return null;
-  return getShopUrl() || null;
+  return (await getShopUrl()) || null;
 }
 
 export async function getOrders(params?: {

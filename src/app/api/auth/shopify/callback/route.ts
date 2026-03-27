@@ -1,8 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
-import { promises as fs } from "fs";
-import path from "path";
 import { createAdminClient } from "@/lib/supabase/admin";
 
+/**
+ * Shopify OAuth callback.
+ * Exchanges authorization code for permanent access token.
+ * Stores token in Supabase only (no file writes for Vercel compatibility).
+ */
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const code = searchParams.get("code");
@@ -28,7 +31,10 @@ export async function GET(request: NextRequest) {
 
   const clientId = process.env.SHOPIFY_CLIENT_ID;
   const clientSecret = process.env.SHOPIFY_CLIENT_SECRET;
-  const shopUrl = shop || process.env.SHOPIFY_STORE_URL;
+  // Use shop from callback, then from cookie, then from env
+  const shopUrl = shop
+    || request.cookies.get("shopify_oauth_shop")?.value
+    || process.env.SHOPIFY_STORE_URL;
 
   if (!clientId || !clientSecret || !shopUrl) {
     return NextResponse.json(
@@ -66,28 +72,12 @@ export async function GET(request: NextRequest) {
       scope: string;
     };
 
-    // Store token in JSON file at project root (backup / fallback)
-    const tokenFilePath = path.join(process.cwd(), ".shopify-token.json");
-    await fs.writeFile(
-      tokenFilePath,
-      JSON.stringify(
-        {
-          access_token: tokenData.access_token,
-          scope: tokenData.scope,
-          shop: shopUrl,
-          created_at: new Date().toISOString(),
-        },
-        null,
-        2
-      ),
-      "utf-8"
-    );
-
-    // Also save credential to Supabase api_credentials table
+    // Save credential to Supabase api_credentials table
+    let tokenPersisted = false;
     try {
       const supabase = createAdminClient();
       if (supabase) {
-        // Get the first organization
+        // Get or create organization
         const { data: org } = await supabase
           .from("organizations")
           .select("id")
@@ -95,7 +85,8 @@ export async function GET(request: NextRequest) {
           .single();
 
         if (org) {
-          await supabase.from("api_credentials").upsert(
+          // Save access token
+          const { error: tokenError } = await supabase.from("api_credentials").upsert(
             {
               organization_id: org.id,
               platform: "shopify",
@@ -107,7 +98,9 @@ export async function GET(request: NextRequest) {
             { onConflict: "organization_id,platform,credential_name", ignoreDuplicates: false }
           );
 
-          // Also save the shop URL as a separate credential
+          if (!tokenError) tokenPersisted = true;
+
+          // Save shop URL
           await supabase.from("api_credentials").upsert(
             {
               organization_id: org.id,
@@ -119,28 +112,39 @@ export async function GET(request: NextRequest) {
             },
             { onConflict: "organization_id,platform,credential_name", ignoreDuplicates: false }
           );
+
+          // Save scope
+          await supabase.from("api_credentials").upsert(
+            {
+              organization_id: org.id,
+              platform: "shopify",
+              credential_name: "scope",
+              credential_value: tokenData.scope,
+              is_active: true,
+              updated_at: new Date().toISOString(),
+            },
+            { onConflict: "organization_id,platform,credential_name", ignoreDuplicates: false }
+          );
         }
       }
     } catch (supabaseErr) {
-      // Non-fatal: log but don't block the OAuth flow
       console.error("Failed to save Shopify credential to Supabase:", supabaseErr);
     }
 
-    // Clear the state cookie and redirect to settings
-    const redirectUrl = new URL(
-      "/dashboard/settings?shopify=connected",
-      appUrl
-    );
+    // Clear OAuth cookies and redirect to settings
+    const redirectParam = tokenPersisted ? "shopify=connected" : "shopify=connected&warning=token_not_persisted";
+    const redirectUrl = new URL(`/dashboard/settings?${redirectParam}`, appUrl);
     const response = NextResponse.redirect(redirectUrl.toString());
     response.cookies.delete("shopify_oauth_state");
+    response.cookies.delete("shopify_oauth_shop");
 
-    // Set the token as an HTTP-only cookie so it persists across deployments
+    // Set token as HTTP-only cookie (Vercel-compatible persistence)
     response.cookies.set("shopify_access_token", tokenData.access_token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       sameSite: "lax",
       path: "/",
-      maxAge: 60 * 60 * 24 * 365, // 1 year
+      maxAge: 60 * 60 * 24 * 365, // 1 year (Shopify tokens don't expire)
     });
 
     return response;
