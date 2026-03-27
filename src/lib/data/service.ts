@@ -127,6 +127,46 @@ async function getMetaInsightsForFilters(filters?: Partial<DashboardFilters>) {
   }
 }
 
+// ── Month list helper (for filtering mock data) ──
+
+function getMonthsForFilters(filters?: Partial<DashboardFilters>): string[] {
+  const selectedMonth = filters?.selectedMonth || "2026-03";
+  const timeRange = filters?.timeRange || "6m";
+  const [year, month] = selectedMonth.split("-").map(Number);
+  const endDate = new Date(year, month - 1, 1);
+
+  let monthsBack: number;
+  switch (timeRange) {
+    case "mtd":
+      return [selectedMonth];
+    case "ytd":
+      monthsBack = month - 1;
+      break;
+    case "3m":
+      monthsBack = 2;
+      break;
+    case "6m":
+      monthsBack = 5;
+      break;
+    case "12m":
+      monthsBack = 11;
+      break;
+    default:
+      return [selectedMonth];
+  }
+
+  const startDate = new Date(year, month - 1 - monthsBack, 1);
+  const months: string[] = [];
+  const current = new Date(startDate);
+  while (current <= endDate) {
+    const y = current.getFullYear();
+    const m = String(current.getMonth() + 1).padStart(2, "0");
+    months.push(`${y}-${m}`);
+    current.setMonth(current.getMonth() + 1);
+  }
+  return months;
+}
+
 // ── Date range helpers ──
 
 function getDateRangeForFilters(filters?: Partial<DashboardFilters>): {
@@ -204,7 +244,11 @@ function applyForecastFilters(
   data: ForecastTableRow[],
   filters?: Partial<DashboardFilters>
 ): ForecastTableRow[] {
-  if (!filters?.selectedMonth) return data;
+  if (!filters) return data;
+  const months = getMonthsForFilters(filters);
+  if (months.length > 0) {
+    data = data.filter((row) => months.includes(row.month));
+  }
   return data;
 }
 
@@ -265,6 +309,18 @@ function applySKUFilters(
   if (filters?.category && filters.category !== "all") {
     result = result.filter((s) => s.category === filters.category);
   }
+  // Filter monthly data within each SKU by time range
+  if (filters) {
+    const months = getMonthsForFilters(filters);
+    if (months.length > 0) {
+      result = result.map((sku) => ({
+        ...sku,
+        months: Object.fromEntries(
+          Object.entries(sku.months).filter(([m]) => months.includes(m))
+        ),
+      }));
+    }
+  }
   return result;
 }
 
@@ -286,7 +342,7 @@ export async function getKPIData(
   let kpi: KPIData;
 
   if (!connected) {
-    kpi = { ...MOCK_KPI_DATA };
+    kpi = applyKPIFilters(MOCK_KPI_DATA, filters);
   } else {
     try {
       const dateRange = getDateRangeForFilters(filters);
@@ -454,11 +510,79 @@ export async function getCACData(
   }
 }
 
+function applyKPIFilters(
+  _kpi: KPIData,
+  filters?: Partial<DashboardFilters>
+): KPIData {
+  if (!filters) return { ..._kpi };
+
+  // Derive KPIs from filtered mock forecast + ad spend data for consistency
+  const months = getMonthsForFilters(filters);
+  const forecastRows = MOCK_FORECAST_TABLE.filter((r) => months.includes(r.month));
+  const adSpendRows = MOCK_AD_SPEND_TABLE.filter((r) => months.includes(r.month));
+  const cacRows = MOCK_CAC_TABLE.filter((r) => months.includes(r.month));
+
+  // Revenue: sum of actuals from filtered forecast rows
+  const totalRevenue = forecastRows.reduce((sum, r) => sum + (r.actual ?? r.forecast_baseline), 0);
+
+  // Ad spend: sum from filtered ad spend rows
+  const totalAdSpend = adSpendRows.reduce((sum, r) => sum + r.spend, 0);
+
+  // Forecast accuracy: average of rows that have actuals
+  const accuracyRows = forecastRows.filter((r) => r.accuracy_pct !== null);
+  const forecastAccuracy = accuracyRows.length > 0
+    ? accuracyRows.reduce((sum, r) => sum + r.accuracy_pct!, 0) / accuracyRows.length
+    : 0;
+
+  // CAC: average total_cac from filtered CAC rows
+  const avgCAC = cacRows.length > 0
+    ? cacRows.reduce((sum, r) => sum + r.total_cac, 0) / cacRows.length
+    : 0;
+
+  // MoM: use last two months if available
+  const sortedMonths = [...new Set(forecastRows.map((r) => r.month))].sort();
+  let revenueMom = 0;
+  if (sortedMonths.length >= 2) {
+    const lastMonth = sortedMonths[sortedMonths.length - 1];
+    const prevMonth = sortedMonths[sortedMonths.length - 2];
+    const lastRow = forecastRows.find((r) => r.month === lastMonth);
+    const prevRow = forecastRows.find((r) => r.month === prevMonth);
+    const lastRev = lastRow?.actual ?? lastRow?.forecast_baseline ?? 0;
+    const prevRev = prevRow?.actual ?? prevRow?.forecast_baseline ?? 0;
+    revenueMom = prevRev > 0 ? +((lastRev - prevRev) / prevRev * 100).toFixed(1) : 0;
+  }
+
+  // Gap to baseline: last month in range
+  const lastForecast = forecastRows[forecastRows.length - 1];
+  const gapBaseline = lastForecast?.gap_baseline_pct ?? _kpi.gap_to_baseline;
+  const gapAmbitious = lastForecast?.gap_ambitious_pct ?? _kpi.gap_to_ambitious;
+
+  return {
+    total_revenue: Math.round(totalRevenue),
+    revenue_mom_change: revenueMom,
+    forecast_accuracy: +forecastAccuracy.toFixed(1),
+    accuracy_mom_change: _kpi.accuracy_mom_change,
+    total_ad_spend: Math.round(totalAdSpend),
+    ad_spend_mom_change: _kpi.ad_spend_mom_change,
+    average_cac: +avgCAC.toFixed(2),
+    cac_mom_change: _kpi.cac_mom_change,
+    gap_to_baseline: gapBaseline,
+    gap_to_ambitious: gapAmbitious,
+  };
+}
+
 function applyCACFilters(
   data: CACTableRow[],
   filters?: Partial<DashboardFilters>
 ): CACTableRow[] {
   let result = data;
+  // Filter by time range
+  if (filters) {
+    const months = getMonthsForFilters(filters);
+    if (months.length > 0) {
+      result = result.filter((r) => months.includes(r.month));
+    }
+  }
   if (filters?.channel && filters.channel !== "all") {
     const channelMap: Record<string, string> = {
       shopify: "Shopify",
