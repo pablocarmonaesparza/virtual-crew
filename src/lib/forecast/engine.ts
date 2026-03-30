@@ -150,13 +150,20 @@ export function advancePeriod(period: string, steps: number): string {
     if (!match) return period;
     let year = parseInt(match[1], 10);
     let week = parseInt(match[2], 10) + steps;
-    while (week > 52) {
-      week -= 52;
+    // ISO 8601: most years have 52 weeks, but some have 53
+    const weeksInYear = (y: number): number => {
+      // A year has 53 weeks if Jan 1 is Thursday, or Dec 31 is Thursday
+      const jan1 = new Date(y, 0, 1).getDay();
+      const dec31 = new Date(y, 11, 31).getDay();
+      return (jan1 === 4 || dec31 === 4) ? 53 : 52;
+    };
+    while (week > weeksInYear(year)) {
+      week -= weeksInYear(year);
       year += 1;
     }
     while (week < 1) {
-      week += 52;
       year -= 1;
+      week += weeksInYear(year);
     }
     return `${year}-W${String(week).padStart(2, "0")}`;
   }

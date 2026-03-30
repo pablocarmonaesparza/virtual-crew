@@ -1,12 +1,28 @@
 import { NextRequest, NextResponse } from "next/server";
 import { MOCK_RECOMMENDATION } from "@/lib/mock-data";
-import {
-  generateForecast,
-  type SalesDataPoint,
-} from "@/lib/forecast/engine";
+import { getKPIData, getAdSpendData } from "@/lib/data/service";
 
 export async function GET() {
   return NextResponse.json(MOCK_RECOMMENDATION);
+}
+
+/**
+ * Build live context from connected data sources for recommendation prompts.
+ * Returns whatever data is available (may be empty if nothing connected).
+ */
+async function buildLiveContext() {
+  try {
+    const [kpi, adSpend] = await Promise.all([
+      getKPIData({}).catch(() => null),
+      getAdSpendData({}).catch(() => null),
+    ]);
+    return {
+      kpi: kpi || { note: "No KPI data — connect Shopify or Meta Ads" },
+      ad_spend: adSpend && adSpend.length > 0 ? adSpend : { note: "No ad spend data — connect Meta Ads" },
+    };
+  } catch {
+    return { note: "No live data sources connected" };
+  }
 }
 
 export async function POST(request: NextRequest) {
@@ -46,8 +62,9 @@ Context: ADM sells Water Kefir, Romedio Infusion, Culture Shots, Fresco. Channel
 
     const { data } = await request.json();
 
-    // Use user-provided data directly (real data only, no mock enrichment)
-    const enrichedData = data;
+    // Enrich with live data from connected sources (KPI, ad spend)
+    const liveContext = await buildLiveContext();
+    const enrichedData = { ...data, live_context: liveContext };
 
     const response = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",

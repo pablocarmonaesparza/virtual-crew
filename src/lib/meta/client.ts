@@ -52,7 +52,37 @@ interface MetaCampaignInsight extends MetaMonthlyInsight {
   campaign_name: string;
 }
 
+/**
+ * Get Meta credentials. Priority:
+ * 1. Supabase api_credentials table (OAuth tokens from /api/auth/meta)
+ * 2. Environment variables (manual configuration)
+ */
+async function getCredentialsFromDB(): Promise<{ accessToken: string; adAccountId: string } | null> {
+  try {
+    const { createAdminClient } = await import("@/lib/supabase/admin");
+    const supabase = createAdminClient();
+    if (!supabase) return null;
+
+    const { data } = await supabase
+      .from("api_credentials")
+      .select("credential_name, credential_value")
+      .eq("platform", "meta_ads")
+      .eq("is_active", true);
+
+    if (!data || data.length === 0) return null;
+
+    const creds = Object.fromEntries(data.map((r: { credential_name: string; credential_value: string }) => [r.credential_name, r.credential_value]));
+    if (creds.access_token && creds.ad_account_id) {
+      return { accessToken: creds.access_token, adAccountId: creds.ad_account_id };
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
+
 function getCredentials() {
+  // Sync fallback: environment variables
   const accessToken = process.env.META_ACCESS_TOKEN;
   const adAccountId = process.env.META_AD_ACCOUNT_ID;
 
@@ -64,11 +94,21 @@ function getCredentials() {
 }
 
 /**
+ * Get credentials with Supabase-first priority (async).
+ * Falls back to env vars if Supabase has no stored OAuth tokens.
+ */
+async function getCredentialsAsync() {
+  const dbCreds = await getCredentialsFromDB();
+  if (dbCreds) return dbCreds;
+  return getCredentials();
+}
+
+/**
  * Check if Meta Ads API is configured and accessible
  */
 export async function isMetaConnected(): Promise<boolean> {
   try {
-    const { accessToken, adAccountId } = getCredentials();
+    const { accessToken, adAccountId } = await getCredentialsAsync();
     const url = `${BASE_URL}/${adAccountId}?fields=id,name,account_status&access_token=${accessToken}`;
     const res = await fetch(url, { next: { revalidate: 300 } }); // cache 5 min
     if (!res.ok) return false;
@@ -86,7 +126,7 @@ export async function getMonthlyInsights(
   since: string, // YYYY-MM-DD
   until: string  // YYYY-MM-DD
 ): Promise<MetaMonthlyInsight[]> {
-  const { accessToken, adAccountId } = getCredentials();
+  const { accessToken, adAccountId } = await getCredentialsAsync();
 
   const params = new URLSearchParams({
     fields: "spend,impressions,clicks,actions,action_values,ctr,cpc,cpm",
@@ -116,7 +156,7 @@ export async function getCampaignInsights(
   until: string,
   limit = 50
 ): Promise<MetaCampaignInsight[]> {
-  const { accessToken, adAccountId } = getCredentials();
+  const { accessToken, adAccountId } = await getCredentialsAsync();
 
   const params = new URLSearchParams({
     fields: "campaign_id,campaign_name,spend,impressions,clicks,actions,action_values,ctr,cpc,cpm",
