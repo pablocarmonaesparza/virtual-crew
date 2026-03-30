@@ -32,7 +32,7 @@ export function FilterBar() {
           value={filters.selectedMonth}
           onValueChange={(v) => setFilter("selectedMonth", v)}
         >
-          <SelectTrigger className="w-[130px] h-8 text-xs">
+          <SelectTrigger className="w-[140px] h-8 text-xs">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
@@ -54,7 +54,7 @@ export function FilterBar() {
           value={filters.timeRange}
           onValueChange={(v) => setFilter("timeRange", v as TimeRange)}
         >
-          <SelectTrigger className="w-[100px] h-8 text-xs">
+          <SelectTrigger className="w-[120px] h-8 text-xs">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
@@ -71,7 +71,7 @@ export function FilterBar() {
           value={filters.channel}
           onValueChange={(v) => setFilter("channel", v as Channel)}
         >
-          <SelectTrigger className="w-[130px] h-8 text-xs">
+          <SelectTrigger className="w-[140px] h-8 text-xs">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
@@ -104,7 +104,7 @@ export function FilterBar() {
           value={filters.customerType}
           onValueChange={(v) => setFilter("customerType", v as CustomerType)}
         >
-          <SelectTrigger className="w-[120px] h-8 text-xs">
+          <SelectTrigger className="w-[130px] h-8 text-xs">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
@@ -120,7 +120,7 @@ export function FilterBar() {
           value={filters.adsPlatform}
           onValueChange={(v) => setFilter("adsPlatform", v as AdsPlatform)}
         >
-          <SelectTrigger className="w-[130px] h-8 text-xs">
+          <SelectTrigger className="w-[140px] h-8 text-xs">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>

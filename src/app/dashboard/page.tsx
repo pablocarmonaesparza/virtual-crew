@@ -69,9 +69,11 @@ export default function DashboardPage() {
     <div className="space-y-5">
       <SetupBanner />
       <KPIBar />
-      <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3">
+      <div className="flex items-end justify-between gap-3">
         <FilterBar />
-        <DataSourceIndicator />
+        <div className="shrink-0">
+          <DataSourceIndicator />
+        </div>
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
