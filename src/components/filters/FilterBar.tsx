@@ -26,7 +26,7 @@ export function FilterBar() {
     filters.timeRange !== "6m";
 
   return (
-    <div className="flex flex-wrap items-end gap-4 rounded-lg border border-border/30 bg-card p-3">
+    <div className="flex flex-wrap items-end gap-3 rounded-lg border border-border/30 bg-card p-3">
       <FilterGroup label="Month">
         <Select
           value={filters.selectedMonth}

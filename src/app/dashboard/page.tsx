@@ -69,13 +69,13 @@ export default function DashboardPage() {
     <div className="space-y-5">
       <SetupBanner />
       <KPIBar />
-      <div className="flex items-center justify-between gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3">
         <FilterBar />
         <DataSourceIndicator />
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-5 lg:w-auto lg:inline-grid">
+        <TabsList className="inline-flex w-full sm:w-auto">
           <TabsTrigger value="forecast" className="gap-1.5">
             <Target className="h-3.5 w-3.5" />
             <span className="hidden sm:inline">Forecast</span>
