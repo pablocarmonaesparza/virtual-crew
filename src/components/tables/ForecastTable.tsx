@@ -1,17 +1,17 @@
 "use client";
 
-import { useState, useMemo, useRef } from "react";
+import { useState, useRef } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { MOCK_FORECAST_TABLE } from "@/lib/mock-data";
 import { formatNumber, formatMonth, exportToCSV } from "@/lib/utils";
+import { EmptyState } from "@/components/layout/EmptyState";
 import { Download, ArrowUpDown, FileDown, Search } from "lucide-react";
 import { useDashboardStore } from "@/stores/dashboard-store";
 import { SourceBadge } from "@/components/layout/SourceBadge";
-import { getMonthsForTimeRange, filterForecastByTimeRange } from "@/lib/utils/filters";
+import { getMonthsForTimeRange } from "@/lib/utils/filters";
 import { exportToPDF } from "@/lib/utils/pdf";
 import { useToast } from "@/components/ui/toast";
 
@@ -43,14 +43,11 @@ export function ForecastTable() {
     retry: 1,
   });
 
-  const mockFilteredData = useMemo(() => {
-    const months = getMonthsForTimeRange(filters.selectedMonth, filters.timeRange);
-    return filterForecastByTimeRange(MOCK_FORECAST_TABLE, months);
-  }, [filters.selectedMonth, filters.timeRange]);
+  const anyLiveSource = shopifyConnected || supabaseConnected;
 
-  // Use live data if available, otherwise fall back to mock
-  const filteredData = liveForecast?.data ?? mockFilteredData;
-  const isLoading = (shopifyConnected || supabaseConnected) && isLiveLoading;
+  // Use live data if available, otherwise empty array (no mock fallback)
+  const filteredData = liveForecast?.data ?? [];
+  const isLoading = anyLiveSource && isLiveLoading;
 
   const data = [...filteredData].sort((a: Record<string, unknown>, b: Record<string, unknown>) => {
     const aVal = (a[sortKey] as number | string | null) ?? -Infinity;
@@ -131,6 +128,8 @@ export function ForecastTable() {
               <Skeleton key={i} className="h-10 w-full" />
             ))}
           </div>
+        ) : !anyLiveSource ? (
+          <EmptyState integration="Shopify" metric="forecast data" />
         ) : data.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-12 text-center">
             <Search className="h-10 w-10 text-muted-foreground/40 mb-3" />

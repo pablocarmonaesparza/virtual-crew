@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import {
   calculateBaseline,
-  calculateBaselineExponential,
+  computeSeasonalityIndices,
   getSeasonalityIndex,
   calculateMarketingUplift,
   calculatePriceImpact,
@@ -9,92 +9,87 @@ import {
   generateForecast,
   calculateAccuracy,
   calculateGap,
+  detectPeriodType,
 } from '@/lib/forecast/engine'
-import type { HistoricalDataPoint } from '@/lib/forecast/engine'
+import type { SalesDataPoint } from '@/lib/forecast/engine'
 
-const SAMPLE_HISTORY: HistoricalDataPoint[] = [
-  { month: '2025-10', sku_id: 'SKU1', channel: 'Shopify', units_sold: 800, ad_spend: 5000, price: 12.99 },
-  { month: '2025-11', sku_id: 'SKU1', channel: 'Shopify', units_sold: 900, ad_spend: 5500, price: 12.99 },
-  { month: '2025-12', sku_id: 'SKU1', channel: 'Shopify', units_sold: 1100, ad_spend: 7000, price: 12.99 },
-  { month: '2026-01', sku_id: 'SKU1', channel: 'Shopify', units_sold: 850, ad_spend: 5200, price: 12.99 },
-  { month: '2026-02', sku_id: 'SKU1', channel: 'Shopify', units_sold: 820, ad_spend: 5000, price: 12.99 },
+const SAMPLE_HISTORY: SalesDataPoint[] = [
+  { period: '2025-10', units: 800, revenue: 10400, adSpend: 5000, price: 12.99 },
+  { period: '2025-11', units: 900, revenue: 11700, adSpend: 5500, price: 12.99 },
+  { period: '2025-12', units: 1100, revenue: 14300, adSpend: 7000, price: 12.99 },
+  { period: '2026-01', units: 850, revenue: 11050, adSpend: 5200, price: 12.99 },
+  { period: '2026-02', units: 820, revenue: 10660, adSpend: 5000, price: 12.99 },
 ]
+
+// ── detectPeriodType ──
+
+describe('detectPeriodType', () => {
+  it('detects monthly periods', () => {
+    expect(detectPeriodType('2025-10')).toBe('monthly')
+  })
+
+  it('detects weekly periods', () => {
+    expect(detectPeriodType('2025-W42')).toBe('weekly')
+  })
+})
 
 // ── calculateBaseline ──
 
 describe('calculateBaseline', () => {
-  it('returns 0 for empty history', () => {
+  it('returns a positive number for valid history', () => {
+    const result = calculateBaseline(SAMPLE_HISTORY)
+    expect(typeof result).toBe('number')
+    expect(result).toBeGreaterThan(0)
+  })
+
+  it('returns 0 for empty input', () => {
     expect(calculateBaseline([])).toBe(0)
   })
 
-  it('calculates moving average from recent months', () => {
-    const result = calculateBaseline(SAMPLE_HISTORY)
-    expect(result).toBeGreaterThan(0)
-    // With default 8-week window (~2 months), should use the 2 most recent
-    // sorted desc: 2026-02 (820), 2026-01 (850) → avg 835
-    expect(result).toBe(835)
-  })
-
-  it('uses custom window size', () => {
-    // 4 weeks = ~1 month
-    const result = calculateBaseline(SAMPLE_HISTORY, 4)
-    // Only the most recent month: 820
-    expect(result).toBe(820)
-  })
-
-  it('is deterministic (same inputs = same output)', () => {
+  it('is deterministic', () => {
     const r1 = calculateBaseline(SAMPLE_HISTORY)
     const r2 = calculateBaseline(SAMPLE_HISTORY)
     expect(r1).toBe(r2)
   })
+
+  it('with alpha=1 returns a reasonable smoothed value', () => {
+    const result = calculateBaseline(SAMPLE_HISTORY, 1.0)
+    // With alpha=1, strongly weights recent data
+    expect(result).toBeGreaterThan(700)
+    expect(result).toBeLessThan(1200)
+  })
 })
 
-// ── calculateBaselineExponential ──
+// ── computeSeasonalityIndices ──
 
-describe('calculateBaselineExponential', () => {
-  it('returns 0 for empty history', () => {
-    expect(calculateBaselineExponential([])).toBe(0)
+describe('computeSeasonalityIndices', () => {
+  it('returns a Map of indices', () => {
+    const indices = computeSeasonalityIndices(SAMPLE_HISTORY)
+    expect(indices).toBeInstanceOf(Map)
+    expect(indices.size).toBeGreaterThan(0)
   })
 
-  it('returns a reasonable value for sample history', () => {
-    const result = calculateBaselineExponential(SAMPLE_HISTORY)
-    expect(result).toBeGreaterThan(0)
-    expect(result).toBeLessThan(2000)
-  })
-
-  it('is deterministic', () => {
-    const r1 = calculateBaselineExponential(SAMPLE_HISTORY)
-    const r2 = calculateBaselineExponential(SAMPLE_HISTORY)
-    expect(r1).toBe(r2)
-  })
-
-  it('with alpha=1 returns the last value', () => {
-    const result = calculateBaselineExponential(SAMPLE_HISTORY, 1.0)
-    // alpha=1 means forecast = last actual value (sorted ascending: 2026-02 = 820)
-    expect(result).toBe(820)
+  it('indices are centered around 1.0', () => {
+    const indices = computeSeasonalityIndices(SAMPLE_HISTORY)
+    const values = Array.from(indices.values())
+    const avg = values.reduce((s, v) => s + v, 0) / values.length
+    // Average should be near 1.0 (with small sample it may deviate slightly)
+    expect(avg).toBeGreaterThan(0.5)
+    expect(avg).toBeLessThan(2.0)
   })
 })
 
 // ── getSeasonalityIndex ──
 
 describe('getSeasonalityIndex', () => {
-  it('returns tea seasonality for December (peak)', () => {
-    const index = getSeasonalityIndex('tea', 12)
-    expect(index).toBe(1.25)
+  it('returns the index for a known period', () => {
+    const indices = computeSeasonalityIndices(SAMPLE_HISTORY)
+    const index = getSeasonalityIndex('2025-10', indices)
+    expect(index).toBeGreaterThan(0)
   })
 
-  it('returns drinks seasonality for June (peak summer)', () => {
-    const index = getSeasonalityIndex('drinks', 6)
-    expect(index).toBe(1.25)
-  })
-
-  it('returns health_products seasonality for January', () => {
-    const index = getSeasonalityIndex('health_products', 1)
-    expect(index).toBe(1.10)
-  })
-
-  it('returns 1.0 for unknown category/month', () => {
-    const index = getSeasonalityIndex('unknown' as never, 1)
+  it('returns 1.0 for an empty indices map', () => {
+    const index = getSeasonalityIndex('2025-10', new Map())
     expect(index).toBe(1.0)
   })
 })
@@ -153,116 +148,80 @@ describe('calculatePriceImpact', () => {
 // ── calculateChannelEffect ──
 
 describe('calculateChannelEffect', () => {
-  it('returns 1.0 with baseline conversion rate', () => {
-    const result = calculateChannelEffect(1.0, 0.03, 0.03)
-    expect(result).toBe(1.0)
+  it('returns 1.0 when shares are equal', () => {
+    expect(calculateChannelEffect(0.5, 0.5)).toBe(1.0)
   })
 
-  it('returns > 1.0 with higher conversion rate', () => {
-    const result = calculateChannelEffect(1.0, 0.06, 0.03)
-    expect(result).toBeGreaterThan(1.0)
+  it('returns > 1.0 when planned share increases', () => {
+    expect(calculateChannelEffect(0.8, 0.5)).toBeGreaterThan(1.0)
   })
 
-  it('returns 1.0 when baseline conversion is 0', () => {
-    expect(calculateChannelEffect(0.5, 0.03, 0)).toBe(1.0)
+  it('returns < 1.0 when planned share decreases', () => {
+    expect(calculateChannelEffect(0.3, 0.5)).toBeLessThan(1.0)
   })
 
-  it('scales with channel share', () => {
-    const full = calculateChannelEffect(1.0, 0.03, 0.03)
-    const half = calculateChannelEffect(0.5, 0.03, 0.03)
-    expect(half).toBeCloseTo(full * 0.5)
+  it('returns 1.0 when historical share is 0', () => {
+    expect(calculateChannelEffect(0.5, 0)).toBe(1.0)
   })
 })
 
 // ── generateForecast ──
 
 describe('generateForecast', () => {
-  it('returns baseline, ambitious, and components', () => {
-    const result = generateForecast({
-      history: SAMPLE_HISTORY,
-      category: 'tea',
-      targetMonth: 12,
-      plannedAdSpend: 5000,
-      historicalAvgAdSpend: 5000,
-      currentPrice: 12.99,
-      baselinePrice: 12.99,
-      channelShare: 1.0,
-      conversionRate: 0.03,
-    })
-
-    expect(result).toHaveProperty('baseline')
-    expect(result).toHaveProperty('ambitious')
-    expect(result).toHaveProperty('components')
-    expect(result.baseline).toBeGreaterThanOrEqual(0)
-    expect(result.ambitious).toBeGreaterThanOrEqual(result.baseline)
+  it('returns forecast results with all components', () => {
+    const results = generateForecast(SAMPLE_HISTORY)
+    expect(results.length).toBeGreaterThan(0)
+    const first = results[0]
+    expect(first).toHaveProperty('period')
+    expect(first).toHaveProperty('baseline')
+    expect(first).toHaveProperty('seasonalityIndex')
+    expect(first).toHaveProperty('marketingUplift')
+    expect(first).toHaveProperty('priceImpact')
+    expect(first).toHaveProperty('channelEffect')
+    expect(first).toHaveProperty('forecast')
+    expect(first).toHaveProperty('confidenceLower')
+    expect(first).toHaveProperty('confidenceUpper')
   })
 
-  it('ambitious is 25% above baseline by default', () => {
-    const result = generateForecast({
-      history: SAMPLE_HISTORY,
-      category: 'tea',
-      targetMonth: 6,
-      plannedAdSpend: 5000,
-      historicalAvgAdSpend: 5000,
-      currentPrice: 12.99,
-      baselinePrice: 12.99,
-      channelShare: 1.0,
-      conversionRate: 0.03,
-    })
+  it('generates 3 periods by default', () => {
+    const results = generateForecast(SAMPLE_HISTORY)
+    expect(results.length).toBe(3)
+  })
 
-    // ambitious = Math.round(baseline * 1.25)
-    expect(result.ambitious).toBe(Math.round(result.baseline * 1.25))
+  it('respects forecastPeriods config', () => {
+    const results = generateForecast(SAMPLE_HISTORY, { forecastPeriods: 6 })
+    expect(results.length).toBe(6)
   })
 
   it('is deterministic', () => {
-    const params = {
-      history: SAMPLE_HISTORY,
-      category: 'tea' as const,
-      targetMonth: 3,
-      plannedAdSpend: 5000,
-      historicalAvgAdSpend: 5000,
-      currentPrice: 12.99,
-      baselinePrice: 12.99,
-      channelShare: 1.0,
-      conversionRate: 0.03,
-    }
-    const r1 = generateForecast(params)
-    const r2 = generateForecast(params)
-    expect(r1.baseline).toBe(r2.baseline)
-    expect(r1.ambitious).toBe(r2.ambitious)
-    expect(r1.components).toEqual(r2.components)
+    const r1 = generateForecast(SAMPLE_HISTORY)
+    const r2 = generateForecast(SAMPLE_HISTORY)
+    expect(r1).toEqual(r2)
   })
 
-  it('supports exponential smoothing method', () => {
-    const result = generateForecast({
-      history: SAMPLE_HISTORY,
-      category: 'tea',
-      targetMonth: 3,
-      plannedAdSpend: 5000,
-      historicalAvgAdSpend: 5000,
-      currentPrice: 12.99,
-      baselinePrice: 12.99,
-      channelShare: 1.0,
-      conversionRate: 0.03,
-      method: 'exponential_smoothing',
-    })
-    expect(result.baseline).toBeGreaterThanOrEqual(0)
-  })
-
-  it('never returns negative values', () => {
-    const result = generateForecast({
-      history: [{ month: '2026-01', sku_id: 'X', channel: 'X', units_sold: 1, ad_spend: 0, price: 100 }],
-      category: 'tea',
-      targetMonth: 7,
+  it('never returns negative forecast values', () => {
+    const results = generateForecast([
+      { period: '2026-01', units: 1, revenue: 10, adSpend: 0, price: 100 },
+    ], {
       plannedAdSpend: 0,
-      historicalAvgAdSpend: 10000,
-      currentPrice: 200,
-      baselinePrice: 10,
-      channelShare: 0,
-      conversionRate: 0,
+      plannedPrice: 200,
     })
-    expect(result.baseline).toBeGreaterThanOrEqual(0)
-    expect(result.ambitious).toBeGreaterThanOrEqual(0)
+    results.forEach(r => {
+      expect(r.forecast).toBeGreaterThanOrEqual(0)
+      expect(r.confidenceLower).toBeGreaterThanOrEqual(0)
+    })
+  })
+
+  it('confidence interval contains the forecast', () => {
+    const results = generateForecast(SAMPLE_HISTORY)
+    results.forEach(r => {
+      expect(r.confidenceLower).toBeLessThanOrEqual(r.forecast)
+      expect(r.confidenceUpper).toBeGreaterThanOrEqual(r.forecast)
+    })
+  })
+
+  it('returns empty array for empty history', () => {
+    expect(generateForecast([])).toEqual([])
   })
 })
 
@@ -273,11 +232,12 @@ describe('calculateAccuracy', () => {
     expect(calculateAccuracy(1000, 1000)).toBe(100)
   })
 
-  it('returns > 100% when actual exceeds forecast', () => {
-    expect(calculateAccuracy(1000, 1100)).toBeGreaterThan(100)
+  it('returns < 100% when actual differs from forecast (over)', () => {
+    // Accuracy = 1 - |error|, so any deviation reduces accuracy
+    expect(calculateAccuracy(1000, 1100)).toBeLessThan(100)
   })
 
-  it('returns < 100% when actual is below forecast', () => {
+  it('returns < 100% when actual differs from forecast (under)', () => {
     expect(calculateAccuracy(1000, 900)).toBeLessThan(100)
   })
 

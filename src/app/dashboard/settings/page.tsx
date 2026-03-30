@@ -490,6 +490,9 @@ export default function SettingsPage() {
       if (!warning) setAmazonAdsConnected(true);
       message = warning ? "Amazon Ads authorized but token could not be saved. Check Supabase config." : "Amazon Ads connected successfully!";
     }
+    if (searchParams.get("meta") === "connected") {
+      message = warning ? "Meta Ads authorized but token could not be saved. Check Supabase config." : "Meta Ads connected successfully!";
+    }
     if (message) {
       setBannerMessage(message);
       setShowSuccessBanner(true);
@@ -695,6 +698,14 @@ export default function SettingsPage() {
                   integration={integration}
                   isConfigured={amazonAdsConnected || (integrationConfigured[integration.name] ?? false)}
                   connectHref="/api/auth/amazon-ads"
+                  onConfigure={() => setConfigureModal(integration.name)}
+                  powers={integrationPowers[integration.name]}
+                />
+              ) : integration.name === "Meta Ads" ? (
+                <OtherIntegrationCard
+                  integration={integration}
+                  isConfigured={integrationConfigured[integration.name]}
+                  connectHref="/api/auth/meta"
                   onConfigure={() => setConfigureModal(integration.name)}
                   powers={integrationPowers[integration.name]}
                 />

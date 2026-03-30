@@ -1,66 +1,21 @@
 "use client";
 
-import { useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { MOCK_CAC_TABLE } from "@/lib/mock-data";
 import { formatCurrency, formatCurrencyPrecise, formatNumber, formatPercent, formatMonth, exportToCSV } from "@/lib/utils";
-import { Download, Search } from "lucide-react";
+import { EmptyState } from "@/components/layout/EmptyState";
+import { Download } from "lucide-react";
 import { useDashboardStore } from "@/stores/dashboard-store";
 import { SourceBadge } from "@/components/layout/SourceBadge";
 import { useToast } from "@/components/ui/toast";
-import {
-  getMonthsForTimeRange,
-  filterCACByChannel,
-  filterCACByTimeRange,
-} from "@/lib/utils/filters";
 
 export function CACTable() {
   const { filters, metaConnected, shopifyConnected } = useDashboardStore();
   const { toast } = useToast();
 
-  const data = useMemo(() => {
-    const months = getMonthsForTimeRange(filters.selectedMonth, filters.timeRange);
-    let filtered = filterCACByTimeRange(MOCK_CAC_TABLE, months);
-    filtered = filterCACByChannel(filtered, filters.channel);
-
-    // Apply customerType filter: zero out the irrelevant customer type columns
-    if (filters.customerType === "new") {
-      filtered = filtered.map((row) => ({
-        ...row,
-        returning_customers: 0,
-        returning_cac: 0,
-      }));
-    } else if (filters.customerType === "returning") {
-      filtered = filtered.map((row) => ({
-        ...row,
-        new_customers: 0,
-        new_cac: 0,
-      }));
-    }
-
-    return filtered;
-  }, [filters.selectedMonth, filters.timeRange, filters.channel, filters.customerType]);
-
+  // No live fetch for CAC table yet — render empty state
   const handleExport = () => {
-    exportToCSV(
-      data.map((r) => ({
-        Month: formatMonth(r.month),
-        Channel: r.channel,
-        "New Customers": r.new_customers,
-        "New CAC": r.new_cac,
-        "Returning Customers": r.returning_customers,
-        "Returning CAC": r.returning_cac,
-        Subscriptions: r.subscription_count,
-        "Sub. Revenue": r.subscription_revenue,
-        "One-time": r.one_time_count,
-        "Total CAC": r.total_cac,
-        "CAC MoM %": `${r.cac_mom_change}%`,
-      })),
-      "cac-analysis"
-    );
-    toast("CSV exported successfully");
+    toast("No data to export", "error");
   };
 
   return (
@@ -73,98 +28,8 @@ export function CACTable() {
         </Button>
       </CardHeader>
       <CardContent>
-        {data.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-12 text-center">
-            <Search className="h-10 w-10 text-muted-foreground/40 mb-3" />
-            <p className="text-sm font-medium text-muted-foreground">No data matches your current filters</p>
-            <p className="text-xs text-muted-foreground/70 mt-1">Try adjusting your filters or selecting a different time range</p>
-          </div>
-        ) : (
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm" role="table">
-            <thead>
-              <tr className="border-b border-border/40">
-                <th className="pb-3 text-left">
-                  <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Month</span>
-                </th>
-                <th className="pb-3 text-left">
-                  <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Channel</span>
-                </th>
-                <th className="pb-3 text-right">
-                  <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">New Cust.</span>
-                </th>
-                <th className="pb-3 text-right">
-                  <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">New CAC</span>
-                </th>
-                <th className="pb-3 text-right">
-                  <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Repeat</span>
-                </th>
-                <th className="pb-3 text-right">
-                  <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Rep CAC</span>
-                </th>
-                <th className="pb-3 text-right">
-                  <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Subs</span>
-                </th>
-                <th className="pb-3 text-right">
-                  <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Sub Rev.</span>
-                </th>
-                <th className="pb-3 text-right">
-                  <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Total CAC</span>
-                </th>
-                <th className="pb-3 text-right">
-                  <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">MoM</span>
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {data.map((row, i) => {
-                const isFirstOfMonth = i === 0 || data[i - 1].month !== row.month;
-                return (
-                  <tr
-                    key={`${row.month}-${row.channel}`}
-                    className={`border-b border-border/30 last:border-0 hover:bg-muted/30 transition-colors ${
-                      isFirstOfMonth && i > 0 ? "border-t-2 border-t-border/40" : ""
-                    }`}
-                  >
-                    <td className="py-2.5 font-medium">
-                      {isFirstOfMonth ? formatMonth(row.month) : ""}
-                    </td>
-                    <td className="py-2.5">
-                      <Badge variant="outline" className="text-xs font-normal">
-                        {row.channel}
-                      </Badge>
-                    </td>
-                    <td className="py-2.5 text-right tabular-nums">{formatNumber(row.new_customers)}</td>
-                    <td className="py-2.5 text-right tabular-nums">{formatCurrencyPrecise(row.new_cac)}</td>
-                    <td className="py-2.5 text-right tabular-nums">{formatNumber(row.returning_customers)}</td>
-                    <td className="py-2.5 text-right tabular-nums">{formatCurrencyPrecise(row.returning_cac)}</td>
-                    <td className="py-2.5 text-right tabular-nums">
-                      {row.subscription_count > 0 ? formatNumber(row.subscription_count) : "—"}
-                    </td>
-                    <td className="py-2.5 text-right tabular-nums">
-                      {row.subscription_revenue > 0 ? formatCurrency(row.subscription_revenue) : "—"}
-                    </td>
-                    <td className="py-2.5 text-right tabular-nums font-medium">
-                      {formatCurrencyPrecise(row.total_cac)}
-                    </td>
-                    <td className="py-2.5 text-right">
-                      {row.cac_mom_change !== 0 ? (
-                        <Badge variant={row.cac_mom_change <= 0 ? "positive" : "negative"}>
-                          {row.cac_mom_change <= 0 ? "↓" : "↑"} {Math.abs(row.cac_mom_change).toFixed(1)}%
-                        </Badge>
-                      ) : (
-                        <span className="text-muted-foreground">—</span>
-                      )}
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
-        )}
+        <EmptyState integration="Meta Ads" metric="customer acquisition cost data" />
       </CardContent>
-
     </Card>
   );
 }

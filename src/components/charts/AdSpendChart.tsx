@@ -1,6 +1,5 @@
 "use client";
 
-import { useMemo } from "react";
 import {
   ResponsiveContainer,
   ComposedChart,
@@ -13,17 +12,12 @@ import {
   Legend,
 } from "recharts";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { MOCK_CHART_DATA } from "@/lib/mock-data";
 import { formatCurrency } from "@/lib/utils";
+import { EmptyState } from "@/components/layout/EmptyState";
 import { getChartColors } from "@/lib/utils/colors";
-import {
-  getMonthsForTimeRange,
-  filterChartDataByTimeRange,
-} from "@/lib/utils/filters";
 import { useDashboardStore } from "@/stores/dashboard-store";
 import { SourceBadge } from "@/components/layout/SourceBadge";
 import { useDarkMode } from "@/hooks/useDarkMode";
-import { Search } from "lucide-react";
 
 function CustomTooltip({ active, payload, label, isDark }: { active?: boolean; payload?: { name: string; value: number; color: string }[]; label?: string; isDark: boolean }) {
   if (!active || !payload || payload.length === 0) return null;
@@ -41,26 +35,12 @@ function CustomTooltip({ active, payload, label, isDark }: { active?: boolean; p
 
 export function AdSpendChart() {
   const { adsPlatform, timeRange, selectedMonth } = useDashboardStore((s) => s.filters);
+  const { metaConnected } = useDashboardStore();
   const isDark = useDarkMode();
   const colors = getChartColors(isDark);
 
-  const data = useMemo(() => {
-    const months = getMonthsForTimeRange(selectedMonth, timeRange);
-    // Use the existing mock chart data format but adapt field names
-    const rawData = filterChartDataByTimeRange(MOCK_CHART_DATA.adSpend, months);
-    const showM = adsPlatform === "all" || adsPlatform === "meta";
-    const showA = adsPlatform === "all" || adsPlatform === "amazon_ads";
-    return rawData.map((d: Record<string, unknown>) => {
-      const meta = showM ? ((d.meta_actual as number) || 0) : 0;
-      const amazon = showA ? ((d.amazon_actual as number) || 0) : 0;
-      return {
-        month: d.month as string,
-        meta_spend: meta,
-        amazon_spend: amazon,
-        total_spend: meta + amazon,
-      };
-    });
-  }, [selectedMonth, timeRange, adsPlatform]);
+  // TODO: Replace with live chart data query when available
+  const data: { month: string; meta_spend: number; amazon_spend: number; total_spend: number }[] = [];
 
   const showMeta = adsPlatform === "all" || adsPlatform === "meta";
   const showAmazon = adsPlatform === "all" || adsPlatform === "amazon_ads";
@@ -70,14 +50,11 @@ export function AdSpendChart() {
   return (
     <Card>
       <CardHeader className="pb-4">
-        <CardTitle className="text-lg flex items-center gap-2">Ad Spend by Platform <SourceBadge source="mock" size="sm" /></CardTitle>
+        <CardTitle className="text-lg flex items-center gap-2">Ad Spend by Platform <SourceBadge source={metaConnected ? "meta" : "mock"} size="sm" /></CardTitle>
       </CardHeader>
       <CardContent>
         {data.length === 0 ? (
-          <div className="flex flex-col items-center justify-center h-[350px] text-center">
-            <Search className="h-10 w-10 text-muted-foreground/40 mb-3" />
-            <p className="text-sm font-medium text-muted-foreground">No data matches your current filters</p>
-          </div>
+          <EmptyState integration="Meta Ads" metric="ad spend charts" />
         ) : (
         <div className="h-[350px]" role="img" aria-label="Ad spend chart showing spend by platform">
           <ResponsiveContainer width="100%" height="100%">

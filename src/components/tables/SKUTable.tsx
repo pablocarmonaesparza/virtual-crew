@@ -6,14 +6,15 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { MOCK_SKU_TABLE, MOCK_SKUS } from "@/lib/mock-data";
+import { MOCK_SKUS } from "@/lib/mock-data";
 import { formatNumber, formatMonth, exportToCSV } from "@/lib/utils";
+import { EmptyState } from "@/components/layout/EmptyState";
 import { Download, X, Search } from "lucide-react";
 import { useToast } from "@/components/ui/toast";
 import { useDashboardStore } from "@/stores/dashboard-store";
 import { SourceBadge } from "@/components/layout/SourceBadge";
-import { filterSKUByCategory, getMonthsForTimeRange } from "@/lib/utils/filters";
-import type { ProductCategory, SKU } from "@/types";
+import { getMonthsForTimeRange } from "@/lib/utils/filters";
+import type { SKU } from "@/types";
 
 interface SKUModalProps {
   skuId: string;
@@ -232,37 +233,13 @@ export function SKUTable() {
     retry: 1,
   });
 
-  const { filteredData: mockData, visibleMonths: mockVisibleMonths } = useMemo(() => {
-    // Filter by category
-    let filtered = filterSKUByCategory(MOCK_SKU_TABLE, filters.category as ProductCategory);
+  const anyLiveSource = shopifyConnected || supabaseConnected;
 
-    // Filter by channel
-    if (filters.channel !== "all") {
-      const channelMap: Record<string, string[]> = {
-        shopify: ["Shopify", "Both"],
-        amazon: ["Amazon", "Both"],
-      };
-      const allowedChannels = channelMap[filters.channel] || [];
-      // Cross-reference with MOCK_SKUS via sku_id to get channel_primary
-      const skuChannelMap = new Map<string, string>(
-        MOCK_SKUS.map((s) => [s.sku_id, s.channel_primary])
-      );
-      filtered = filtered.filter((row) => {
-        const channel = skuChannelMap.get(row.sku_id);
-        return channel ? allowedChannels.includes(channel) : true;
-      });
-    }
-
-    // Compute visible months from the time range filter
-    const months = getMonthsForTimeRange(filters.selectedMonth, filters.timeRange);
-
-    return { filteredData: filtered, visibleMonths: months };
-  }, [filters.category, filters.channel, filters.selectedMonth, filters.timeRange]);
-
-  // Use live data if available, otherwise mock
-  const data = liveSKU?.rows ?? mockData;
-  const VISIBLE_MONTHS: string[] = liveSKU?.months ?? mockVisibleMonths;
-  const isLoading = (shopifyConnected || supabaseConnected) && isLiveLoading;
+  // Use live data if available, otherwise empty (no mock fallback)
+  const data = liveSKU?.rows ?? [];
+  const defaultMonths = useMemo(() => getMonthsForTimeRange(filters.selectedMonth, filters.timeRange), [filters.selectedMonth, filters.timeRange]);
+  const VISIBLE_MONTHS: string[] = liveSKU?.months ?? defaultMonths;
+  const isLoading = anyLiveSource && isLiveLoading;
 
   // Reset page when filters change
   useEffect(() => {
@@ -310,6 +287,8 @@ export function SKUTable() {
               <Skeleton key={i} className="h-10 w-full" />
             ))}
           </div>
+        ) : !anyLiveSource ? (
+          <EmptyState integration="Shopify" metric="SKU performance data" />
         ) : data.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-12 text-center">
             <Search className="h-10 w-10 text-muted-foreground/40 mb-3" />

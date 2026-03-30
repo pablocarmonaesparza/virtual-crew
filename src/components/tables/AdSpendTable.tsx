@@ -5,8 +5,8 @@ import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { MOCK_AD_SPEND_TABLE } from "@/lib/mock-data";
 import { formatCurrency, formatPercent, formatMonth, formatNumber, exportToCSV } from "@/lib/utils";
+import { EmptyState } from "@/components/layout/EmptyState";
 import { Download, Search } from "lucide-react";
 import { useDashboardStore } from "@/stores/dashboard-store";
 import { SourceBadge } from "@/components/layout/SourceBadge";
@@ -42,7 +42,7 @@ export function AdSpendTable() {
   });
 
   const data = useMemo(() => {
-    // Use live Meta data if available
+    // Use live Meta data if available, otherwise empty (no mock fallback)
     if (liveAdSpend && liveAdSpend.length > 0) {
       const months = getMonthsForTimeRange(filters.selectedMonth, filters.timeRange);
       let filtered = filterAdSpendByTimeRange(liveAdSpend, months);
@@ -50,11 +50,7 @@ export function AdSpendTable() {
       return filtered;
     }
 
-    // Fallback to mock
-    const months = getMonthsForTimeRange(filters.selectedMonth, filters.timeRange);
-    let filtered = filterAdSpendByTimeRange(MOCK_AD_SPEND_TABLE, months);
-    filtered = filterAdSpendByPlatform(filtered, filters.adsPlatform);
-    return filtered;
+    return [];
   }, [filters.selectedMonth, filters.timeRange, filters.adsPlatform, liveAdSpend]);
 
   const handleExport = () => {
@@ -86,7 +82,9 @@ export function AdSpendTable() {
         </Button>
       </CardHeader>
       <CardContent>
-        {data.length === 0 ? (
+        {!metaConnected ? (
+          <EmptyState integration="Meta Ads" metric="ad spend data" />
+        ) : data.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-12 text-center">
             <Search className="h-10 w-10 text-muted-foreground/40 mb-3" />
             <p className="text-sm font-medium text-muted-foreground">No data matches your current filters</p>

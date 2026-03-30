@@ -1,6 +1,5 @@
 "use client";
 
-import { useMemo } from "react";
 import {
   ResponsiveContainer,
   ComposedChart,
@@ -12,17 +11,12 @@ import {
   Legend,
 } from "recharts";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { MOCK_CHART_DATA } from "@/lib/mock-data";
 import { formatNumber } from "@/lib/utils";
+import { EmptyState } from "@/components/layout/EmptyState";
 import { getChartColors } from "@/lib/utils/colors";
-import {
-  getMonthsForTimeRange,
-  filterChartDataByTimeRange,
-} from "@/lib/utils/filters";
 import { useDashboardStore } from "@/stores/dashboard-store";
 import { SourceBadge } from "@/components/layout/SourceBadge";
 import { useDarkMode } from "@/hooks/useDarkMode";
-import { Search } from "lucide-react";
 
 interface ForecastTooltipProps {
   active?: boolean;
@@ -87,26 +81,22 @@ function CustomTooltip({ active, payload, label, isDark }: ForecastTooltipProps)
 
 export function ForecastChart() {
   const { timeRange, selectedMonth } = useDashboardStore((s) => s.filters);
+  const { shopifyConnected, supabaseConnected } = useDashboardStore();
   const isDark = useDarkMode();
   const colors = getChartColors(isDark);
+  const anyLiveSource = shopifyConnected || supabaseConnected;
 
-  const data = useMemo(() => {
-    const months = getMonthsForTimeRange(selectedMonth, timeRange);
-    return filterChartDataByTimeRange(MOCK_CHART_DATA.forecastVsActual, months);
-  }, [selectedMonth, timeRange]);
+  // TODO: Replace with live chart data query when available
+  const data: { month: string; baseline: number; ambitious: number; actual: number | null }[] = [];
 
   return (
     <Card>
       <CardHeader className="pb-4">
-        <CardTitle className="text-lg flex items-center gap-2">Forecast vs Actual — Units by Month <SourceBadge source="mock" size="sm" /></CardTitle>
+        <CardTitle className="text-lg flex items-center gap-2">Forecast vs Actual — Units by Month <SourceBadge source={anyLiveSource ? "shopify" : "mock"} size="sm" /></CardTitle>
       </CardHeader>
       <CardContent>
         {data.length === 0 ? (
-          <div className="flex flex-col items-center justify-center h-[350px] text-center">
-            <Search className="h-10 w-10 text-muted-foreground/40 mb-3" />
-            <p className="text-sm font-medium text-muted-foreground">No data matches your current filters</p>
-            <p className="text-xs text-muted-foreground/70 mt-1">Try adjusting your filters or selecting a different time range</p>
-          </div>
+          <EmptyState integration="Shopify" metric="forecast charts" />
         ) : (
         <div className="h-[350px]" role="img" aria-label="Forecast vs Actual line chart showing units by month">
           <ResponsiveContainer width="100%" height="100%">
