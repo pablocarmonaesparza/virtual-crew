@@ -68,9 +68,7 @@ export default function DashboardPage() {
   return (
     <div className="space-y-5">
       <SetupBanner />
-      <div className="flex items-center gap-3">
-        <KPIBar />
-      </div>
+      <KPIBar />
       <div className="flex items-center justify-between gap-4">
         <FilterBar />
         <DataSourceIndicator />

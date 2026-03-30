@@ -44,22 +44,22 @@ function KPICard({ title, value, change, icon, subtitle, isLoading, sourceTag }:
   const isNeutral = change === 0;
 
   return (
-    <Card className="relative overflow-hidden border-border/30 shadow-sm">
-      <CardContent className="p-4">
-        <div className="flex items-start justify-between">
+    <Card className="relative overflow-hidden border-border/30 shadow-sm h-full">
+      <CardContent className="p-4 h-full flex flex-col">
+        <div className="flex items-start justify-between flex-1">
           <div className="space-y-1 min-w-0">
-            <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider truncate">
+            <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider truncate">
               {title}
             </p>
             {isLoading ? (
               <Skeleton className="h-7 w-24" />
             ) : (
-              <p className="text-xl sm:text-2xl font-bold font-heading text-foreground tabular-nums">
+              <p className="text-xl sm:text-2xl font-bold font-heading text-foreground tabular-nums leading-tight">
                 {value}
               </p>
             )}
             {subtitle && !isLoading && (
-              <p className="text-xs text-muted-foreground truncate">{subtitle}</p>
+              <p className="text-[11px] text-muted-foreground truncate">{subtitle}</p>
             )}
             {isLoading && <Skeleton className="h-3 w-16 mt-1" />}
           </div>
@@ -67,23 +67,23 @@ function KPICard({ title, value, change, icon, subtitle, isLoading, sourceTag }:
             {icon}
           </div>
         </div>
-        <div className="mt-2 flex items-center gap-2 flex-wrap">
+        <div className="mt-2 flex items-center gap-1.5 flex-wrap">
           {isLoading ? (
             <Skeleton className="h-5 w-20 rounded-full" />
           ) : (
             <Badge
               variant={isNeutral ? "secondary" : isPositive ? "positive" : "negative"}
-              className="text-xs"
+              className="text-[10px] shrink-0"
             >
               {isPositive ? (
-                <TrendingUp className="mr-1 h-3 w-3" />
+                <TrendingUp className="mr-0.5 h-2.5 w-2.5" />
               ) : (
-                <TrendingDown className="mr-1 h-3 w-3" />
+                <TrendingDown className="mr-0.5 h-2.5 w-2.5" />
               )}
               {formatPercent(change)} MoM
             </Badge>
           )}
-          {sourceTag && !isLoading && sourceTag}
+          {sourceTag && !isLoading && <span className="shrink-0">{sourceTag}</span>}
         </div>
       </CardContent>
     </Card>
@@ -216,7 +216,7 @@ export function KPIBar() {
 
   return (
     <div
-      className="grid gap-4 grid-cols-2 md:grid-cols-3 lg:grid-cols-5 [&>:last-child]:col-span-2 md:[&>:last-child]:col-span-1 sm:[&>:last-child]:col-span-2 md:[&>:nth-child(4)]:col-span-1 md:[&>:nth-child(5)]:col-span-1"
+      className="grid gap-3 grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 [&>:last-child]:col-span-2 sm:[&>:last-child]:col-span-1"
       role="region"
       aria-label="Key Performance Indicators"
     >
