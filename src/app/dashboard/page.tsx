@@ -26,30 +26,30 @@ import {
 } from "lucide-react";
 
 export default function DashboardPage() {
-  const { activeTab, setActiveTab, setShopifyConnected, setShopifyStoreName, setMetaConnected, setSupabaseConnected } =
-    useDashboardStore();
+  const {
+    activeTab, setActiveTab,
+    setShopifyConnected, setShopifyStoreName,
+    setMetaConnected, setSupabaseConnected,
+    setAmazonSpConnected, setAmazonAdsConnected,
+  } = useDashboardStore();
 
   // Check all API connections on mount
   useEffect(() => {
     async function checkStatus() {
       try {
-        // Check overall status (includes Meta, Supabase)
         const statusRes = await fetch("/api/status");
         if (statusRes.ok) {
           const status = await statusRes.json();
-          if (status.meta_ads?.connected) {
-            setMetaConnected(true);
-          }
-          if (status.supabase?.connected) {
-            setSupabaseConnected(true);
-          }
+          if (status.meta_ads?.connected) setMetaConnected(true);
+          if (status.supabase?.connected) setSupabaseConnected(true);
+          if (status.amazon_sp?.configured) setAmazonSpConnected(true);
+          if (status.amazon_ads?.configured) setAmazonAdsConnected(true);
         }
       } catch {
         // API not available — stay in mock mode
       }
 
       try {
-        // Check Shopify separately (has its own endpoint)
         const res = await fetch("/api/shopify/status");
         if (res.ok) {
           const data = await res.json();
@@ -63,7 +63,7 @@ export default function DashboardPage() {
       }
     }
     checkStatus();
-  }, [setShopifyConnected, setShopifyStoreName, setMetaConnected, setSupabaseConnected]);
+  }, [setShopifyConnected, setShopifyStoreName, setMetaConnected, setSupabaseConnected, setAmazonSpConnected, setAmazonAdsConnected]);
 
   return (
     <div className="space-y-5">

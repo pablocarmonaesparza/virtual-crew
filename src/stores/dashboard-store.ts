@@ -28,6 +28,10 @@ interface DashboardState {
   setSupabaseConnected: (connected: boolean) => void;
   metaConnected: boolean;
   setMetaConnected: (connected: boolean) => void;
+  amazonSpConnected: boolean;
+  setAmazonSpConnected: (connected: boolean) => void;
+  amazonAdsConnected: boolean;
+  setAmazonAdsConnected: (connected: boolean) => void;
   dataSource: "mock" | "live" | "supabase";
   setDataSource: (source: "mock" | "live" | "supabase") => void;
   latestRecommendation: LLMRecommendation | null;
@@ -109,6 +113,10 @@ export const useDashboardStore = create<DashboardState>((set) => ({
       metaConnected: connected,
       dataSource: connected && state.dataSource === "mock" ? "live" : state.dataSource,
     })),
+  amazonSpConnected: false,
+  setAmazonSpConnected: (connected) => set({ amazonSpConnected: connected }),
+  amazonAdsConnected: false,
+  setAmazonAdsConnected: (connected) => set({ amazonAdsConnected: connected }),
   dataSource: "mock",
   setDataSource: (source) => set({ dataSource: source }),
   latestRecommendation: null,

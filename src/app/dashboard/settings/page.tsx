@@ -200,11 +200,13 @@ function ShopifyIntegrationCard({ integration }: { integration: IntegrationConfi
 function OtherIntegrationCard({
   integration,
   isConfigured,
+  connectHref,
   onConfigure,
   powers,
 }: {
   integration: IntegrationConfig;
   isConfigured?: boolean;
+  connectHref?: string;
   onConfigure?: () => void;
   powers?: string[];
 }) {
@@ -221,7 +223,17 @@ function OtherIntegrationCard({
               <p className="text-[11px] text-muted-foreground/70">{integration.schedule}</p>
             </div>
           </div>
-          <StatusBadge status={isConfigured ? "connected" : "not_connected"} />
+          {isConfigured ? (
+            <StatusBadge status="connected" />
+          ) : connectHref ? (
+            <a href={connectHref}>
+              <Button size="sm" className="h-7 text-xs gap-1">
+                Connect <ArrowRight className="h-3 w-3" />
+              </Button>
+            </a>
+          ) : (
+            <StatusBadge status="not_connected" />
+          )}
         </div>
         <p className="text-xs text-muted-foreground mb-2">{integration.description}</p>
         {powers && powers.length > 0 && (
@@ -378,10 +390,15 @@ export default function SettingsPage() {
     setShopifyStoreName,
     setDataSource,
     setSupabaseConnected,
+    amazonSpConnected,
+    setAmazonSpConnected,
+    amazonAdsConnected,
+    setAmazonAdsConnected,
   } = useDashboardStore();
 
   const searchParams = useSearchParams();
   const [showSuccessBanner, setShowSuccessBanner] = useState(false);
+  const [bannerMessage, setBannerMessage] = useState("");
   const [status, setStatus] = useState<StatusResponse | null>(null);
   const [syncLogs, setSyncLogs] = useState<SyncLog[]>([]);
   const [configureModal, setConfigureModal] = useState<string | null>(null);
@@ -409,11 +426,17 @@ export default function SettingsPage() {
             setDataSource("live");
           }
         }
+        if (data.amazon_sp?.configured) {
+          setAmazonSpConnected(true);
+        }
+        if (data.amazon_ads?.configured) {
+          setAmazonAdsConnected(true);
+        }
       }
     } catch {
       // Status API not available — leave defaults
     }
-  }, [setShopifyConnected, setDataSource, setSupabaseConnected]);
+  }, [setShopifyConnected, setDataSource, setSupabaseConnected, setAmazonSpConnected, setAmazonAdsConnected]);
 
   // Fetch Shopify shop name from the existing endpoint
   const fetchShopifyDetails = useCallback(async () => {
@@ -451,15 +474,29 @@ export default function SettingsPage() {
     fetchSyncLogs();
   }, [fetchStatus, fetchShopifyDetails, fetchSyncLogs]);
 
-  // Show success banner when redirected back from Shopify OAuth
+  // Show success banner when redirected back from OAuth
   useEffect(() => {
+    const warning = searchParams.get("warning");
+    let message = "";
     if (searchParams.get("shopify") === "connected") {
+      if (!warning) setShopifyConnected(true);
+      message = warning ? "Shopify authorized but token could not be saved. Check Supabase config." : "Shopify connected successfully!";
+    }
+    if (searchParams.get("amazon_sp") === "connected") {
+      if (!warning) setAmazonSpConnected(true);
+      message = warning ? "Amazon SP-API authorized but token could not be saved. Check Supabase config." : "Amazon SP-API connected successfully!";
+    }
+    if (searchParams.get("amazon_ads") === "connected") {
+      if (!warning) setAmazonAdsConnected(true);
+      message = warning ? "Amazon Ads authorized but token could not be saved. Check Supabase config." : "Amazon Ads connected successfully!";
+    }
+    if (message) {
+      setBannerMessage(message);
       setShowSuccessBanner(true);
-      setShopifyConnected(true);
-      const timer = setTimeout(() => setShowSuccessBanner(false), 5000);
+      const timer = setTimeout(() => setShowSuccessBanner(false), 8000);
       return () => clearTimeout(timer);
     }
-  }, [searchParams, setShopifyConnected]);
+  }, [searchParams, setShopifyConnected, setAmazonSpConnected, setAmazonAdsConnected]);
 
   // Build dynamic env items based on status
   const supabaseTables = status?.supabase?.tables ?? {};
@@ -552,8 +589,8 @@ export default function SettingsPage() {
           >
             <div className="flex items-center gap-2">
               <CheckCircle2 className="h-4 w-4 shrink-0" />
-              <span className="font-medium">Shopify connected successfully.</span>
-              <span className="text-green-700">Your store data will begin syncing shortly.</span>
+              <span className="font-medium">{bannerMessage || "Connected successfully."}</span>
+              <span className="text-green-700 dark:text-green-400">Your data will begin syncing shortly.</span>
             </div>
             <button
               onClick={() => setShowSuccessBanner(false)}
@@ -645,6 +682,22 @@ export default function SettingsPage() {
             <div key={integration.name}>
               {integration.name === "Shopify" ? (
                 <ShopifyIntegrationCard integration={integration} />
+              ) : integration.name === "Amazon SP-API" ? (
+                <OtherIntegrationCard
+                  integration={integration}
+                  isConfigured={amazonSpConnected || (integrationConfigured[integration.name] ?? false)}
+                  connectHref="/api/auth/amazon-sp"
+                  onConfigure={() => setConfigureModal(integration.name)}
+                  powers={integrationPowers[integration.name]}
+                />
+              ) : integration.name === "Amazon Ads" ? (
+                <OtherIntegrationCard
+                  integration={integration}
+                  isConfigured={amazonAdsConnected || (integrationConfigured[integration.name] ?? false)}
+                  connectHref="/api/auth/amazon-ads"
+                  onConfigure={() => setConfigureModal(integration.name)}
+                  powers={integrationPowers[integration.name]}
+                />
               ) : (
                 <OtherIntegrationCard
                   integration={integration}
