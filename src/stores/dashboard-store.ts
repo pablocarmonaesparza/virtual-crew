@@ -63,8 +63,8 @@ export const useDashboardStore = create<DashboardState>((set) => ({
   setSidebarOpen: (open) => set({ isSidebarOpen: open }),
   theme:
     typeof window !== "undefined"
-      ? ((localStorage.getItem("theme") as "light" | "dark" | "system") || "system")
-      : "system",
+      ? ((localStorage.getItem("theme") as "light" | "dark" | "system") || "dark")
+      : "dark",
   setTheme: (theme) =>
     set(() => {
       if (typeof window !== "undefined") {

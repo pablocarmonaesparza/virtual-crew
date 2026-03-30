@@ -13,9 +13,26 @@ export async function GET(request: NextRequest) {
     }
 
     const { searchParams } = new URL(request.url);
-    const since = searchParams.get("since") || getDefaultSince();
-    const until = searchParams.get("until") || getDefaultUntil();
     const level = searchParams.get("level") || "account"; // "account" or "campaign"
+
+    // Support month + timeRange filters from dashboard
+    const month = searchParams.get("month");
+    const timeRange = searchParams.get("timeRange") || "6m";
+    let since: string;
+    let until: string;
+
+    if (month && searchParams.has("month")) {
+      // Compute date range from month + timeRange
+      const [y, m] = month.split("-").map(Number);
+      const rangeMonths = timeRange === "3m" ? 3 : timeRange === "12m" ? 12 : timeRange === "ytd" ? m : 6;
+      const startDate = new Date(y, m - rangeMonths, 1);
+      const endDate = new Date(y, m, 0); // last day of selected month
+      since = `${startDate.getFullYear()}-${String(startDate.getMonth() + 1).padStart(2, "0")}-01`;
+      until = `${endDate.getFullYear()}-${String(endDate.getMonth() + 1).padStart(2, "0")}-${String(endDate.getDate()).padStart(2, "0")}`;
+    } else {
+      since = searchParams.get("since") || getDefaultSince();
+      until = searchParams.get("until") || getDefaultUntil();
+    }
 
     if (level === "campaign") {
       const campaigns = await getCampaignInsights(since, until);

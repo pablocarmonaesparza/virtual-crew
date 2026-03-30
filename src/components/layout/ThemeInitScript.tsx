@@ -7,13 +7,14 @@ export function ThemeInitScript() {
           document.documentElement.classList.add('dark');
         } else if (theme === 'light') {
           document.documentElement.classList.remove('dark');
-        } else {
-          // "system" or absent — follow OS preference
+        } else if (theme === 'system') {
+          // Stored "system" — follow OS preference
           if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
             document.documentElement.classList.add('dark');
-          } else {
-            document.documentElement.classList.remove('dark');
           }
+        } else {
+          // No stored preference — default to dark
+          document.documentElement.classList.add('dark');
         }
       } catch (e) {}
     })();

@@ -26,7 +26,12 @@ export function AdSpendTable() {
   const { data: liveAdSpend } = useQuery<AdSpendTableRow[]>({
     queryKey: ["adspend", filters.selectedMonth, filters.timeRange, filters.adsPlatform, metaConnected, supabaseConnected],
     queryFn: async () => {
-      const res = await fetch("/api/meta/insights");
+      const params = new URLSearchParams({
+        month: filters.selectedMonth,
+        timeRange: filters.timeRange,
+        platform: filters.adsPlatform,
+      });
+      const res = await fetch(`/api/meta/insights?${params}`);
       if (!res.ok) throw new Error("Failed to fetch Meta ad spend");
       const data = await res.json();
       return data.ad_spend_rows || [];
