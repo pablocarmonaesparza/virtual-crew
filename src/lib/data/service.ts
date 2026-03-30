@@ -212,7 +212,7 @@ export async function getForecastData(
   // 2. Try Shopify
   const connected = await isShopifyConnected();
   if (!connected) {
-    return applyForecastFilters(MOCK_FORECAST_TABLE, filters);
+    return []; // No Shopify — return empty (no mock fallback)
   }
 
   try {
@@ -235,8 +235,8 @@ export async function getForecastData(
     const forecastData = transformOrdersToForecast(filteredOrders);
     return forecastData;
   } catch (error) {
-    console.error("Error fetching Shopify forecast data, falling back to mock:", error);
-    return applyForecastFilters(MOCK_FORECAST_TABLE, filters);
+    console.error("Error fetching Shopify forecast data:", error);
+    return [];
   }
 }
 
@@ -268,7 +268,7 @@ export async function getSKUData(
   // 2. Try Shopify
   const connected = await isShopifyConnected();
   if (!connected) {
-    return applySKUFilters(MOCK_SKU_TABLE, filters);
+    return []; // No Shopify — return empty (no mock fallback)
   }
 
   try {
@@ -296,8 +296,8 @@ export async function getSKUData(
 
     return skuData;
   } catch (error) {
-    console.error("Error fetching Shopify SKU data, falling back to mock:", error);
-    return applySKUFilters(MOCK_SKU_TABLE, filters);
+    console.error("Error fetching Shopify SKU data:", error);
+    return [];
   }
 }
 
@@ -342,7 +342,20 @@ export async function getKPIData(
   let kpi: KPIData;
 
   if (!connected) {
-    kpi = applyKPIFilters(MOCK_KPI_DATA, filters);
+    // No Shopify — return empty base KPIs (no mock data).
+    // Meta enrichment below will fill ad spend + CAC if connected.
+    kpi = {
+      total_revenue: 0,
+      revenue_mom_change: 0,
+      forecast_accuracy: 0,
+      accuracy_mom_change: 0,
+      total_ad_spend: 0,
+      ad_spend_mom_change: 0,
+      average_cac: 0,
+      cac_mom_change: 0,
+      gap_to_baseline: 0,
+      gap_to_ambitious: 0,
+    };
   } else {
     try {
       const dateRange = getDateRangeForFilters(filters);
@@ -363,8 +376,14 @@ export async function getKPIData(
 
       kpi = transformOrdersToKPI(filteredOrders);
     } catch (error) {
-      console.error("Error fetching Shopify KPI data, falling back to mock:", error);
-      kpi = { ...MOCK_KPI_DATA };
+      console.error("Error fetching Shopify KPI data:", error);
+      kpi = {
+        total_revenue: 0, revenue_mom_change: 0,
+        forecast_accuracy: 0, accuracy_mom_change: 0,
+        total_ad_spend: 0, ad_spend_mom_change: 0,
+        average_cac: 0, cac_mom_change: 0,
+        gap_to_baseline: 0, gap_to_ambitious: 0,
+      };
     }
   }
 
@@ -394,16 +413,10 @@ export async function getAdSpendData(
     console.error("Supabase ad spend fetch failed, trying Meta API:", err);
   }
 
-  // 2. Try Meta Ads API for real data
+  // 2. Try Meta Ads API for real data (no Amazon mock rows — only real data)
   const metaInsights = await getMetaInsightsForFilters(filters);
   if (metaInsights && metaInsights.length > 0) {
     const metaRows = transformMetaToAdSpendRows(metaInsights);
-
-    // Keep Amazon mock rows for now (until Amazon Ads API is connected)
-    const amazonMockRows = MOCK_AD_SPEND_TABLE.filter(
-      (r) => r.platform === "Amazon Ads"
-    );
-    const allData = mergeAdSpendData(metaRows, amazonMockRows);
 
     // Apply platform filter
     if (filters?.adsPlatform && filters.adsPlatform !== "all") {
@@ -413,28 +426,15 @@ export async function getAdSpendData(
       };
       const platformName = platformMap[filters.adsPlatform];
       if (platformName) {
-        return allData.filter((row) => row.platform === platformName);
+        return metaRows.filter((row) => row.platform === platformName);
       }
     }
 
-    return allData;
+    return metaRows;
   }
 
-  // 3. Fallback to mock
-  let data = MOCK_AD_SPEND_TABLE;
-
-  if (filters?.adsPlatform && filters.adsPlatform !== "all") {
-    const platformMap: Record<string, string> = {
-      meta: "Meta Ads",
-      amazon_ads: "Amazon Ads",
-    };
-    const platformName = platformMap[filters.adsPlatform];
-    if (platformName) {
-      data = data.filter((row) => row.platform === platformName);
-    }
-  }
-
-  return data;
+  // 3. No data available — return empty (no mock fallback)
+  return [];
 }
 
 // ── CAC data ──
@@ -447,19 +447,9 @@ export async function getCACData(
   if (metaInsights && metaInsights.length > 0) {
     const metaCACRows = calculateRealCAC(metaInsights);
 
-    // If channel filter excludes Meta, skip
+    // If channel filter excludes Meta, return empty (no Amazon mock)
     if (filters?.channel === "amazon") {
-      // Only Amazon mock rows when Meta is filtered out
-      return applyCACFilters(MOCK_CAC_TABLE.filter((r) => r.channel === "Amazon"), filters);
-    }
-
-    // Add Amazon mock rows if channel allows
-    if (!filters?.channel || filters.channel === "all") {
-      const amazonMockRows = MOCK_CAC_TABLE.filter((r) => r.channel === "Amazon");
-      return [...metaCACRows, ...amazonMockRows].sort((a, b) => {
-        const mc = a.month.localeCompare(b.month);
-        return mc !== 0 ? mc : a.channel.localeCompare(b.channel);
-      });
+      return []; // Amazon CAC not available until Amazon Ads connected
     }
 
     return metaCACRows;
@@ -469,7 +459,7 @@ export async function getCACData(
   const connected = await isShopifyConnected();
 
   if (!connected) {
-    return applyCACFilters(MOCK_CAC_TABLE, filters);
+    return []; // No Shopify — return empty (no mock fallback)
   }
 
   try {
@@ -493,20 +483,10 @@ export async function getCACData(
           )
         : internalOrders;
 
-    const cacData = transformCustomersToCAC(filteredOrders, rawCustomers);
-
-    // Only append Amazon mock rows when the channel filter allows it
-    if (!filters?.channel || filters.channel === "all" || filters.channel === "amazon") {
-      const amazonMockData = MOCK_CAC_TABLE.filter(
-        (r) => r.channel === "Amazon"
-      );
-      return [...cacData, ...amazonMockData];
-    }
-
-    return cacData;
+    return transformCustomersToCAC(filteredOrders, rawCustomers);
   } catch (error) {
-    console.error("Error fetching Shopify CAC data, falling back to mock:", error);
-    return applyCACFilters(MOCK_CAC_TABLE, filters);
+    console.error("Error fetching Shopify CAC data:", error);
+    return [];
   }
 }
 

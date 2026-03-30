@@ -19,7 +19,7 @@ import { SourceBadge } from "@/components/layout/SourceBadge";
 interface KPICardProps {
   title: string;
   value: string;
-  change: number;
+  change: number | null; // null = hide MoM badge
   icon: React.ReactNode;
   subtitle?: string;
   isLoading?: boolean;
@@ -27,8 +27,9 @@ interface KPICardProps {
 }
 
 function KPICard({ title, value, change, icon, subtitle, isLoading, sourceTag }: KPICardProps) {
-  const isPositive = change > 0;
-  const isNeutral = change === 0;
+  const hasChange = change !== null;
+  const isPositive = hasChange && change > 0;
+  const isNeutral = hasChange && change === 0;
 
   return (
     <Card className="relative overflow-hidden border-border/30 shadow-sm h-full">
@@ -57,7 +58,7 @@ function KPICard({ title, value, change, icon, subtitle, isLoading, sourceTag }:
         <div className="mt-2 flex items-center gap-1.5 flex-wrap">
           {isLoading ? (
             <Skeleton className="h-5 w-20 rounded-full" />
-          ) : (
+          ) : hasChange ? (
             <Badge
               variant={isNeutral ? "secondary" : isPositive ? "positive" : "negative"}
               className="text-[10px] shrink-0"
@@ -69,7 +70,7 @@ function KPICard({ title, value, change, icon, subtitle, isLoading, sourceTag }:
               )}
               {formatPercent(change)} MoM
             </Badge>
-          )}
+          ) : null}
           {sourceTag && !isLoading && <span className="shrink-0">{sourceTag}</span>}
         </div>
       </CardContent>
@@ -107,23 +108,11 @@ export function KPIBar() {
   const platformLabel = filters.adsPlatform === "all" ? "Meta + Amazon" : filters.adsPlatform === "meta" ? "Meta Ads" : "Amazon Ads";
   const channelLabel = filters.channel === "all" ? "All channels" : filters.channel === "shopify" ? "Shopify" : "Amazon";
 
-  // Use live data if available, otherwise show empty placeholders
-  const kpiData = liveKPI
-    ? {
-        totalRevenue: liveKPI.totalRevenue ?? 0,
-        revenueMom: liveKPI.revenueMom ?? 0,
-        forecastAccuracy: liveKPI.forecastAccuracy ?? 0,
-        accuracyMom: liveKPI.accuracyMom ?? 0,
-        totalAdSpend: liveKPI.totalAdSpend ?? 0,
-        adSpendMom: liveKPI.adSpendMom ?? 0,
-        averageCAC: liveKPI.averageCAC ?? 0,
-        cacMom: liveKPI.cacMom ?? 0,
-        gapBaseline: liveKPI.gapBaseline ?? 0,
-        gapAmbitious: liveKPI.gapAmbitious ?? 0,
-        platformLabel,
-        channelLabel,
-      }
-    : null;
+  // Check actual values — a connected source with 0 data is still "no data"
+  const hasRevenue = liveKPI && (liveKPI.totalRevenue ?? 0) > 0;
+  const hasAdSpend = liveKPI && (liveKPI.totalAdSpend ?? 0) > 0;
+  const hasForecast = liveKPI && (liveKPI.forecastAccuracy ?? 0) > 0;
+  const hasGap = liveKPI && liveKPI.gapBaseline != null && (liveKPI.totalRevenue ?? 0) > 0;
 
   return (
     <div
@@ -133,54 +122,54 @@ export function KPIBar() {
     >
       <KPICard
         title="Total Revenue"
-        value={kpiData ? formatCurrency(kpiData.totalRevenue) : "—"}
-        change={kpiData?.revenueMom ?? 0}
+        value={hasRevenue ? formatCurrency(liveKPI!.totalRevenue) : "—"}
+        change={hasRevenue ? liveKPI!.revenueMom ?? 0 : null}
         icon={<DollarSign className="h-4 w-4" />}
-        subtitle={kpiData ? "Month to date" : "Connect Shopify"}
+        subtitle={hasRevenue ? "Month to date" : "Connect Shopify"}
         isLoading={isLoading}
-        sourceTag={<SourceBadge source={shopifyConnected ? "shopify" : "mock"} />}
+        sourceTag={hasRevenue ? <SourceBadge source={shopifyConnected ? "shopify" : "supabase"} /> : undefined}
       />
       <KPICard
         title="Forecast Accuracy"
-        value={kpiData ? `${kpiData.forecastAccuracy.toFixed(1)}%` : "—"}
-        change={kpiData?.accuracyMom ?? 0}
+        value={hasForecast ? `${liveKPI!.forecastAccuracy.toFixed(1)}%` : "—"}
+        change={hasForecast ? liveKPI!.accuracyMom ?? 0 : null}
         icon={<Target className="h-4 w-4" />}
-        subtitle={kpiData ? "vs. baseline" : "Connect Shopify"}
+        subtitle={hasForecast ? "vs. baseline" : "Connect Shopify"}
         isLoading={isLoading}
-        sourceTag={<SourceBadge source={supabaseConnected ? "supabase" : "mock"} />}
+        sourceTag={hasForecast ? <SourceBadge source="supabase" /> : undefined}
       />
       <KPICard
         title="Ad Spend"
-        value={kpiData ? formatCurrency(kpiData.totalAdSpend) : "—"}
-        change={kpiData?.adSpendMom ?? 0}
+        value={hasAdSpend ? formatCurrency(liveKPI!.totalAdSpend) : "—"}
+        change={hasAdSpend ? liveKPI!.adSpendMom ?? 0 : null}
         icon={<BarChart3 className="h-4 w-4" />}
-        subtitle={kpiData ? kpiData.platformLabel : "Connect Meta Ads"}
+        subtitle={hasAdSpend ? platformLabel : "Connect Meta Ads"}
         isLoading={isLoading}
-        sourceTag={<SourceBadge source={metaConnected ? "meta" : "mock"} />}
+        sourceTag={hasAdSpend ? <SourceBadge source="meta" /> : undefined}
       />
       <KPICard
         title="Avg. CAC"
-        value={kpiData ? `£${kpiData.averageCAC.toFixed(2)}` : "—"}
-        change={kpiData?.cacMom ?? 0}
+        value={hasAdSpend ? `£${(liveKPI!.averageCAC ?? 0).toFixed(2)}` : "—"}
+        change={hasAdSpend ? liveKPI!.cacMom ?? 0 : null}
         icon={<Users className="h-4 w-4" />}
-        subtitle={kpiData ? kpiData.channelLabel : "Connect Meta Ads"}
+        subtitle={hasAdSpend ? channelLabel : "Connect Meta Ads"}
         isLoading={isLoading}
-        sourceTag={<SourceBadge source={metaConnected ? "meta" : "mock"} />}
+        sourceTag={hasAdSpend ? <SourceBadge source="meta" /> : undefined}
       />
       <KPICard
         title="Gap to Baseline"
-        value={kpiData ? formatPercent(kpiData.gapBaseline) : "—"}
-        change={kpiData?.gapBaseline ?? 0}
+        value={hasGap ? formatPercent(liveKPI!.gapBaseline) : "—"}
+        change={hasGap ? liveKPI!.gapBaseline : null}
         icon={
-          (kpiData?.gapBaseline ?? 0) >= 0 ? (
+          (liveKPI?.gapBaseline ?? 0) >= 0 ? (
             <TrendingUp className="h-4 w-4" />
           ) : (
             <TrendingDown className="h-4 w-4" />
           )
         }
-        subtitle={kpiData ? `Ambitious: ${formatPercent(kpiData.gapAmbitious)}` : "Connect Shopify"}
+        subtitle={hasGap ? `Ambitious: ${formatPercent(liveKPI!.gapAmbitious ?? 0)}` : "Connect Shopify"}
         isLoading={isLoading}
-        sourceTag={<SourceBadge source={supabaseConnected ? "supabase" : "mock"} />}
+        sourceTag={hasGap ? <SourceBadge source="supabase" /> : undefined}
       />
     </div>
   );

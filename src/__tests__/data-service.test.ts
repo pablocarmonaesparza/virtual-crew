@@ -55,54 +55,20 @@ describe('getActiveDataSource', () => {
 // ── getForecastData ──
 
 describe('getForecastData', () => {
-  it('returns mock forecast data when no live data sources', async () => {
+  it('returns empty array when no live data sources (no mock fallback)', async () => {
     const result = await getForecastData()
     expect(Array.isArray(result)).toBe(true)
-    expect(result.length).toBeGreaterThan(0)
-  })
-
-  it('each row has required ForecastTableRow fields', async () => {
-    const result = await getForecastData()
-    for (const row of result) {
-      expect(row).toHaveProperty('month')
-      expect(row).toHaveProperty('forecast_baseline')
-      expect(row).toHaveProperty('forecast_ambitious')
-      expect(typeof row.month).toBe('string')
-      expect(typeof row.forecast_baseline).toBe('number')
-      expect(typeof row.forecast_ambitious).toBe('number')
-    }
-  })
-
-  it('returns the same data as MOCK_FORECAST_TABLE', async () => {
-    const result = await getForecastData()
-    expect(result).toEqual(MOCK_FORECAST_TABLE)
+    expect(result.length).toBe(0)
   })
 })
 
 // ── getSKUData ──
 
 describe('getSKUData', () => {
-  it('returns mock SKU data', async () => {
+  it('returns empty array when no live data sources (no mock fallback)', async () => {
     const result = await getSKUData()
     expect(Array.isArray(result)).toBe(true)
-    expect(result.length).toBeGreaterThan(0)
-  })
-
-  it('each row has required SKUTableRow fields', async () => {
-    const result = await getSKUData()
-    for (const row of result) {
-      expect(row).toHaveProperty('sku_id')
-      expect(row).toHaveProperty('sku_title')
-      expect(row).toHaveProperty('product_type')
-      expect(row).toHaveProperty('category')
-      expect(row).toHaveProperty('months')
-      expect(typeof row.months).toBe('object')
-    }
-  })
-
-  it('filters by category when provided', async () => {
-    const result = await getSKUData({ category: 'tea' } as never)
-    expect(result.every((r) => r.category === 'tea')).toBe(true)
+    expect(result.length).toBe(0)
   })
 })
 
@@ -129,66 +95,29 @@ describe('getKPIData', () => {
     expect(result).toHaveProperty('gap_to_ambitious')
   })
 
-  it('returns the same data as MOCK_KPI_DATA', async () => {
+  it('returns zero KPIs when no sources connected (no mock fallback)', async () => {
     const result = await getKPIData()
-    expect(result).toEqual(MOCK_KPI_DATA)
+    expect(result.total_revenue).toBe(0)
+    expect(typeof result.total_ad_spend).toBe('number')
   })
 })
 
 // ── getAdSpendData ──
 
 describe('getAdSpendData', () => {
-  it('returns mock ad spend data', async () => {
+  it('returns empty array when no live data sources (no mock fallback)', async () => {
     const result = await getAdSpendData()
     expect(Array.isArray(result)).toBe(true)
-    expect(result.length).toBeGreaterThan(0)
-  })
-
-  it('each row has required AdSpendTableRow fields', async () => {
-    const result = await getAdSpendData()
-    for (const row of result) {
-      expect(row).toHaveProperty('month')
-      expect(row).toHaveProperty('platform')
-      expect(row).toHaveProperty('spend')
-      expect(row).toHaveProperty('impressions')
-      expect(row).toHaveProperty('clicks')
-    }
-  })
-
-  it('filters by platform when provided', async () => {
-    const result = await getAdSpendData({ adsPlatform: 'meta' } as never)
-    expect(result.every((r) => r.platform === 'Meta Ads')).toBe(true)
-  })
-
-  it('returns all when platform is "all"', async () => {
-    const result = await getAdSpendData({ adsPlatform: 'all' } as never)
-    expect(result).toEqual(MOCK_AD_SPEND_TABLE)
+    expect(result.length).toBe(0)
   })
 })
 
 // ── getCACData ──
 
 describe('getCACData', () => {
-  it('returns mock CAC data', async () => {
+  it('returns empty array when no live data sources (no mock fallback)', async () => {
     const result = await getCACData()
     expect(Array.isArray(result)).toBe(true)
-    expect(result.length).toBeGreaterThan(0)
-  })
-
-  it('each row has required CACTableRow fields', async () => {
-    const result = await getCACData()
-    for (const row of result) {
-      expect(row).toHaveProperty('month')
-      expect(row).toHaveProperty('channel')
-      expect(row).toHaveProperty('new_customers')
-      expect(row).toHaveProperty('new_cac')
-      expect(row).toHaveProperty('returning_customers')
-      expect(row).toHaveProperty('total_cac')
-    }
-  })
-
-  it('returns the same data as MOCK_CAC_TABLE', async () => {
-    const result = await getCACData()
-    expect(result).toEqual(MOCK_CAC_TABLE)
+    expect(result.length).toBe(0)
   })
 })
