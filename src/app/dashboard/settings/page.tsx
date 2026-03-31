@@ -669,45 +669,44 @@ export default function SettingsPage() {
         <h3 className="text-sm font-semibold text-foreground uppercase tracking-wider mb-4">
           Data Integrations
         </h3>
+        {/* Active integrations */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {integrations.map((integration) => (
-            <div key={integration.name}>
-              {integration.name === "Shopify" ? (
-                <ShopifyIntegrationCard integration={integration} />
-              ) : integration.name === "Amazon SP-API" ? (
-                <OtherIntegrationCard
-                  integration={integration}
-                  isConfigured={amazonSpConnected || (integrationConfigured[integration.name] ?? false)}
-                  connectHref="/api/auth/amazon-sp"
-                  onConfigure={() => setConfigureModal(integration.name)}
-                  powers={integrationPowers[integration.name]}
-                />
-              ) : integration.name === "Amazon Ads" ? (
-                <OtherIntegrationCard
-                  integration={integration}
-                  isConfigured={amazonAdsConnected || (integrationConfigured[integration.name] ?? false)}
-                  connectHref="/api/auth/amazon-ads"
-                  onConfigure={() => setConfigureModal(integration.name)}
-                  powers={integrationPowers[integration.name]}
-                />
-              ) : integration.name === "Meta Ads" ? (
-                <OtherIntegrationCard
-                  integration={integration}
-                  isConfigured={integrationConfigured[integration.name]}
-                  connectHref="/api/auth/meta"
-                  onConfigure={() => setConfigureModal(integration.name)}
-                  powers={integrationPowers[integration.name]}
-                />
-              ) : (
-                <OtherIntegrationCard
-                  integration={integration}
-                  isConfigured={integrationConfigured[integration.name]}
-                  onConfigure={() => setConfigureModal(integration.name)}
-                  powers={integrationPowers[integration.name]}
-                />
-              )}
-            </div>
-          ))}
+          {integrations
+            .filter((i) => i.name === "Shopify" || i.name === "Meta Ads")
+            .map((integration) => (
+              <div key={integration.name}>
+                {integration.name === "Shopify" ? (
+                  <ShopifyIntegrationCard integration={integration} />
+                ) : (
+                  <OtherIntegrationCard
+                    integration={integration}
+                    isConfigured={integrationConfigured[integration.name]}
+                    connectHref="/api/auth/meta"
+                    onConfigure={() => setConfigureModal(integration.name)}
+                    powers={integrationPowers[integration.name]}
+                  />
+                )}
+              </div>
+            ))}
+        </div>
+
+        {/* Coming soon — Amazon integrations (disabled, transparent) */}
+        <div className="mt-4">
+          <p className="text-[10px] font-medium text-muted-foreground/50 uppercase tracking-wider mb-2">Coming Soon</p>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 opacity-40 pointer-events-none select-none">
+            {integrations
+              .filter((i) => i.name === "Amazon SP-API" || i.name === "Amazon Ads")
+              .map((integration) => (
+                <div key={integration.name}>
+                  <OtherIntegrationCard
+                    integration={integration}
+                    isConfigured={false}
+                    onConfigure={() => {}}
+                    powers={integrationPowers[integration.name]}
+                  />
+                </div>
+              ))}
+          </div>
         </div>
       </section>
 
