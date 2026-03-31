@@ -9,7 +9,6 @@ import {
   Package,
   BarChart3,
   Image,
-  ExternalLink,
   CheckCircle2,
   AlertCircle,
   Circle,
@@ -273,7 +272,7 @@ const CONFIGURE_INSTRUCTIONS: Record<string, { title: string; steps: string[] }>
       "2. Create an SP-API application under Apps & Services",
       "3. Generate a Refresh Token via the OAuth flow",
       "4. Add the following environment variables: AMAZON_SP_CLIENT_ID, AMAZON_SP_CLIENT_SECRET, AMAZON_SP_REFRESH_TOKEN",
-      "5. Restart the N8N workflow 'ADM: Amazon SP-API Sync'",
+      "5. Data will sync automatically via Vercel cron jobs",
     ],
   },
   "Amazon Ads": {
@@ -283,7 +282,7 @@ const CONFIGURE_INSTRUCTIONS: Record<string, { title: string; steps: string[] }>
       "2. Navigate to Campaign Manager and create an API profile",
       "3. Generate OAuth credentials via the Amazon Ads developer portal",
       "4. Add the following environment variables: AMAZON_ADS_CLIENT_ID, AMAZON_ADS_CLIENT_SECRET, AMAZON_ADS_REFRESH_TOKEN, AMAZON_ADS_PROFILE_ID",
-      "5. Restart the N8N workflow 'ADM: Amazon Ads Sync'",
+      "5. Data will sync automatically via Vercel cron jobs",
     ],
   },
   "Meta Ads": {
@@ -293,7 +292,7 @@ const CONFIGURE_INSTRUCTIONS: Record<string, { title: string; steps: string[] }>
       "2. Generate a long-lived access token with ads_read permissions",
       "3. Note your Ad Account ID from Business Settings",
       "4. Add the following environment variables: META_ADS_ACCESS_TOKEN, META_ADS_ACCOUNT_ID",
-      "5. Restart the N8N workflow 'ADM: Meta Ads Sync'",
+      "5. Data will sync automatically via Vercel cron jobs",
     ],
   },
 };
@@ -514,8 +513,8 @@ export default function SettingsPage() {
     },
     {
       label: "Automation",
-      value: "N8N — 4 workflows created",
-      status: (status?.n8n?.configured ? "connected" : "warning") as "connected" | "not_connected" | "warning" | "neutral",
+      value: "Vercel Cron Jobs",
+      status: "connected" as "connected" | "not_connected" | "warning" | "neutral",
       icon: Workflow,
     },
     {
@@ -546,8 +545,6 @@ export default function SettingsPage() {
     "Amazon Ads": ["Amazon ad spend", "Amazon ROAS"],
     "Meta Ads": ["Ad Spend KPI & table", "CAC calculations", "Campaign insights"],
   };
-
-  const n8nUrl = status?.n8n?.url || "https://pblcrmn.app.n8n.cloud";
 
   const handleExportSyncLogs = () => {
     if (syncLogs.length === 0) {
@@ -669,17 +666,9 @@ export default function SettingsPage() {
 
       {/* Data Integrations */}
       <section>
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="text-sm font-semibold text-foreground uppercase tracking-wider">
-            Data Integrations
-          </h3>
-          <a href={n8nUrl} target="_blank" rel="noopener noreferrer">
-            <Button variant="outline" size="sm" className="h-7 text-xs">
-              <ExternalLink className="mr-1.5 h-3 w-3" />
-              Open N8N
-            </Button>
-          </a>
-        </div>
+        <h3 className="text-sm font-semibold text-foreground uppercase tracking-wider mb-4">
+          Data Integrations
+        </h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {integrations.map((integration) => (
             <div key={integration.name}>
