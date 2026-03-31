@@ -49,6 +49,16 @@ export async function GET(request: NextRequest) {
     );
   }
 
+  // Validate shop matches the one that initiated OAuth (fail closed)
+  const storedShop = request.cookies.get("shopify_oauth_shop")?.value;
+  if (!storedShop || storedShop !== shop) {
+    console.error("Shop mismatch or missing cookie: stored=", storedShop, "callback=", shop);
+    return NextResponse.json(
+      { error: "Shop mismatch — possible session hijack" },
+      { status: 403 }
+    );
+  }
+
   const clientId = process.env.SHOPIFY_CLIENT_ID?.trim();
   const clientSecret = process.env.SHOPIFY_CLIENT_SECRET?.trim();
   // Use validated shop from callback param

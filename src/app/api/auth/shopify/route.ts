@@ -6,15 +6,15 @@ import crypto from "crypto";
  * Accepts optional ?shop= parameter for multi-tenant use.
  * Falls back to SHOPIFY_STORE_URL env var for single-tenant.
  */
-export async function GET(request: NextRequest) {
+export async function GET(_request: NextRequest) {
   const clientId = process.env.SHOPIFY_CLIENT_ID?.trim();
-  const { searchParams } = new URL(request.url);
-  const shopUrl = (searchParams.get("shop") || process.env.SHOPIFY_STORE_URL || "").trim();
+  // Single-tenant: always use the configured store — no ?shop= override allowed
+  const shopUrl = (process.env.SHOPIFY_STORE_URL || "").trim();
   const appUrl = (process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000").trim();
 
   if (!clientId || !shopUrl) {
     return NextResponse.json(
-      { error: "Missing Shopify configuration. Provide ?shop=yourstore.myshopify.com" },
+      { error: "Missing Shopify configuration" },
       { status: 400 }
     );
   }
