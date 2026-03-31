@@ -3,8 +3,8 @@ import crypto from "crypto";
 
 /**
  * Shopify OAuth initiation.
- * Accepts optional ?shop= parameter for multi-tenant use.
- * Falls back to SHOPIFY_STORE_URL env var for single-tenant.
+ * Single-tenant: always uses SHOPIFY_STORE_URL env var.
+ * No ?shop= override — store is fixed server-side.
  */
 export async function GET(_request: NextRequest) {
   const clientId = process.env.SHOPIFY_CLIENT_ID?.trim();

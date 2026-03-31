@@ -49,19 +49,19 @@ export async function GET(request: NextRequest) {
     );
   }
 
-  // Validate shop matches the one that initiated OAuth (fail closed)
-  const storedShop = request.cookies.get("shopify_oauth_shop")?.value;
-  if (!storedShop || storedShop !== shop) {
-    console.error("Shop mismatch or missing cookie: stored=", storedShop, "callback=", shop);
+  // Server-side single-tenant enforcement: shop must match SHOPIFY_STORE_URL env var
+  const configuredShop = process.env.SHOPIFY_STORE_URL?.trim();
+  if (!configuredShop || shop !== configuredShop) {
+    console.error("Shop does not match configured store: expected=", configuredShop, "callback=", shop);
     return NextResponse.json(
-      { error: "Shop mismatch — possible session hijack" },
+      { error: "Shop does not match configured store" },
       { status: 403 }
     );
   }
 
   const clientId = process.env.SHOPIFY_CLIENT_ID?.trim();
   const clientSecret = process.env.SHOPIFY_CLIENT_SECRET?.trim();
-  // Use validated shop from callback param
+  // Use validated shop from callback param (matches configuredShop)
   const shopUrl = shop.trim();
 
   if (!clientId || !clientSecret) {
