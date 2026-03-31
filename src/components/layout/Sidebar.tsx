@@ -12,18 +12,28 @@ import {
   ChevronRight,
   X,
   LogOut,
+  Target,
+  Package,
+  BarChart3,
+  Users,
+  Lightbulb,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 
-const NAV_ITEMS = [
-  { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/dashboard/settings", label: "Settings", icon: Settings },
+const DASHBOARD_TABS = [
+  { value: "forecast", label: "Forecast", icon: Target },
+  { value: "sku", label: "SKU Detail", icon: Package },
+  { value: "ads", label: "Ad Spend", icon: BarChart3 },
+  { value: "cac", label: "CAC", icon: Users },
+  { value: "recommendations", label: "Recommendations", icon: Lightbulb },
 ] as const;
 
 export function Sidebar() {
-  const { isSidebarOpen, toggleSidebar, setSidebarOpen } = useDashboardStore();
+  const { isSidebarOpen, toggleSidebar, setSidebarOpen, activeTab, setActiveTab } = useDashboardStore();
   const pathname = usePathname();
   const router = useRouter();
+  const isDashboard = pathname === "/dashboard";
+  const isSettings = pathname.startsWith("/dashboard/settings");
 
   const handleLogout = async () => {
     const supabase = createClient();
@@ -84,36 +94,74 @@ export function Sidebar() {
         </div>
 
         {/* Navigation */}
-        <nav className="flex-1 space-y-0.5 px-2 py-4">
-          {NAV_ITEMS.map(({ href, label, icon: Icon }) => {
-            const isActive =
-              href === "/dashboard"
-                ? pathname === "/dashboard"
-                : pathname.startsWith(href);
+        <nav className="flex-1 px-2 py-4 space-y-1 overflow-y-auto">
+          {/* Dashboard header */}
+          <Link
+            href="/dashboard"
+            className={cn(
+              "flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-colors",
+              isDashboard
+                ? "text-foreground"
+                : "text-muted-foreground hover:bg-muted hover:text-foreground",
+              !isSidebarOpen && "lg:justify-center lg:px-0"
+            )}
+            title={!isSidebarOpen ? "Dashboard" : undefined}
+          >
+            <LayoutDashboard className="h-4 w-4 shrink-0" />
+            <span className={cn("truncate", !isSidebarOpen && "lg:hidden")}>
+              Dashboard
+            </span>
+          </Link>
 
-            return (
-              <Link
-                key={href}
-                href={href}
-                className={cn(
-                  "flex items-center gap-2 rounded-md px-3 py-2.5 text-sm font-medium transition-colors",
-                  isActive
-                    ? "bg-primary/10 text-primary dark:bg-primary/15 dark:text-primary"
-                    : "text-muted-foreground hover:bg-muted hover:text-foreground",
-                  !isSidebarOpen && "lg:justify-center lg:px-0"
-                )}
-                title={!isSidebarOpen ? label : undefined}
-              >
-                <Icon className="h-4 w-4 shrink-0" />
-                <span className={cn(
-                  "truncate",
-                  !isSidebarOpen && "lg:hidden"
-                )}>
-                  {label}
-                </span>
-              </Link>
-            );
-          })}
+          {/* Dashboard sub-items */}
+          <div className={cn("space-y-0.5", isSidebarOpen ? "pl-3" : "lg:pl-0")}>
+            {DASHBOARD_TABS.map(({ value, label, icon: Icon }) => {
+              const isActive = isDashboard && activeTab === value;
+              return (
+                <button
+                  key={value}
+                  onClick={() => {
+                    setActiveTab(value);
+                    if (!isDashboard) router.push("/dashboard");
+                    // Close mobile sidebar
+                    const mq = window.matchMedia("(max-width: 1023px)");
+                    if (mq.matches) setSidebarOpen(false);
+                  }}
+                  className={cn(
+                    "flex w-full items-center gap-2 rounded-md px-3 py-2 text-[13px] font-medium transition-colors",
+                    isActive
+                      ? "bg-primary/10 text-primary dark:bg-primary/15 dark:text-primary"
+                      : "text-muted-foreground hover:bg-muted hover:text-foreground",
+                    !isSidebarOpen && "lg:justify-center lg:px-0"
+                  )}
+                  title={!isSidebarOpen ? label : undefined}
+                >
+                  <Icon className="h-3.5 w-3.5 shrink-0" />
+                  <span className={cn("truncate", !isSidebarOpen && "lg:hidden")}>
+                    {label}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Settings */}
+          <Link
+            href="/dashboard/settings"
+            className={cn(
+              "flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-colors mt-2",
+              isSettings
+                ? "bg-primary/10 text-primary dark:bg-primary/15 dark:text-primary"
+                : "text-muted-foreground hover:bg-muted hover:text-foreground",
+              !isSidebarOpen && "lg:justify-center lg:px-0"
+            )}
+            title={!isSidebarOpen ? "Settings" : undefined}
+          >
+            <Settings className="h-4 w-4 shrink-0" />
+            <span className={cn("truncate", !isSidebarOpen && "lg:hidden")}>
+              Settings
+            </span>
+          </Link>
         </nav>
 
         {/* Logout */}
