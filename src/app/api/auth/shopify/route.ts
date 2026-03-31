@@ -7,10 +7,10 @@ import crypto from "crypto";
  * Falls back to SHOPIFY_STORE_URL env var for single-tenant.
  */
 export async function GET(request: NextRequest) {
-  const clientId = process.env.SHOPIFY_CLIENT_ID;
+  const clientId = process.env.SHOPIFY_CLIENT_ID?.trim();
   const { searchParams } = new URL(request.url);
-  const shopUrl = searchParams.get("shop") || process.env.SHOPIFY_STORE_URL;
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+  const shopUrl = (searchParams.get("shop") || process.env.SHOPIFY_STORE_URL || "").trim();
+  const appUrl = (process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000").trim();
 
   if (!clientId || !shopUrl) {
     return NextResponse.json(

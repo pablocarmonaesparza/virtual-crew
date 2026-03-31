@@ -14,7 +14,7 @@ export async function GET(request: NextRequest) {
   const state = searchParams.get("state");
   const hmac = searchParams.get("hmac");
   const shop = searchParams.get("shop");
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+  const appUrl = (process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000").trim();
 
   // Verify CSRF state
   const storedState = request.cookies.get("shopify_oauth_state")?.value;
@@ -32,12 +32,12 @@ export async function GET(request: NextRequest) {
     );
   }
 
-  const clientId = process.env.SHOPIFY_CLIENT_ID;
-  const clientSecret = process.env.SHOPIFY_CLIENT_SECRET;
+  const clientId = process.env.SHOPIFY_CLIENT_ID?.trim();
+  const clientSecret = process.env.SHOPIFY_CLIENT_SECRET?.trim();
   // Use shop from callback, then from cookie, then from env
-  const shopUrl = shop
+  const shopUrl = (shop
     || request.cookies.get("shopify_oauth_shop")?.value
-    || process.env.SHOPIFY_STORE_URL;
+    || process.env.SHOPIFY_STORE_URL || "").trim();
 
   if (!clientId || !clientSecret || !shopUrl) {
     return NextResponse.json(
