@@ -1,20 +1,27 @@
 import { NextResponse } from "next/server";
-import { isShopifyConnected, getShopInfo } from "@/lib/shopify/client";
+import { isShopifyConnected, getShopInfo, validateShopifyToken } from "@/lib/shopify/client";
 
 export async function GET() {
   try {
-    const connected = await isShopifyConnected();
-    const shop = connected ? await getShopInfo() : null;
+    const hasToken = await isShopifyConnected();
+    if (!hasToken) {
+      return NextResponse.json({ connected: false, shop: null });
+    }
 
-    return NextResponse.json({
-      connected,
-      shop,
-    });
+    // Validate the token actually works against the Shopify API
+    const shopName = await validateShopifyToken();
+    if (!shopName) {
+      return NextResponse.json({
+        connected: false,
+        shop: null,
+        error: "Token exists but is invalid or expired",
+      });
+    }
+
+    const shop = await getShopInfo();
+    return NextResponse.json({ connected: true, shop: shop || shopName });
   } catch (error) {
     console.error("Shopify status check error:", error);
-    return NextResponse.json({
-      connected: false,
-      shop: null,
-    });
+    return NextResponse.json({ connected: false, shop: null });
   }
 }

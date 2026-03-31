@@ -1,0 +1,19 @@
+# Virtual Crew S&OP Dashboard — Shopify Custom App
+# Single-tenant: connects only to aguademadre.myshopify.com
+
+client_id = "ef95b074d1842790a1025357839436a9"
+name = "Virtual Crew S&OP"
+application_url = "https://virtual-crew-sop.vercel.app/dashboard"
+embedded = false
+
+[distribution]
+kind = "custom"
+
+[access_scopes]
+scopes = "read_orders,read_products,read_inventory,read_customers"
+
+[auth]
+redirect_urls = [
+  "https://virtual-crew-sop.vercel.app/api/auth/shopify/callback",
+  "http://localhost:3000/api/auth/shopify/callback"
+]

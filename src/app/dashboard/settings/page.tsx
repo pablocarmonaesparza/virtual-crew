@@ -141,6 +141,25 @@ function StatusBadge({ status }: { status: "connected" | "not_connected" | "warn
 
 function ShopifyIntegrationCard({ integration }: { integration: IntegrationConfig }) {
   const { shopifyConnected, shopifyStoreName } = useDashboardStore();
+  const { toast } = useToast();
+  const [syncing, setSyncing] = useState(false);
+
+  const handleSyncNow = async () => {
+    setSyncing(true);
+    try {
+      const res = await fetch("/api/shopify/backfill", { method: "POST" });
+      if (res.ok) {
+        toast("Backfill started — historical data is syncing in the background");
+      } else {
+        const err = await res.json().catch(() => ({}));
+        toast(err.error || "Backfill failed", "error");
+      }
+    } catch {
+      toast("Failed to start backfill", "error");
+    } finally {
+      setSyncing(false);
+    }
+  };
 
   return (
     <Card className="h-full">
@@ -182,14 +201,17 @@ function ShopifyIntegrationCard({ integration }: { integration: IntegrationConfi
               </span>
             ))}
           </div>
-          <Button
-            variant="outline"
-            size="sm"
-            className="h-6 text-[10px] px-2 shrink-0"
-            disabled={!shopifyConnected}
-          >
-            Configure
-          </Button>
+          <div className="flex gap-1.5">
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-6 text-[10px] px-2 shrink-0"
+              disabled={!shopifyConnected || syncing}
+              onClick={handleSyncNow}
+            >
+              {syncing ? "Syncing..." : "Sync Now"}
+            </Button>
+          </div>
         </div>
       </CardContent>
     </Card>

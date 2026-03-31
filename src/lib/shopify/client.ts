@@ -308,6 +308,33 @@ export async function isShopifyConnected(): Promise<boolean> {
   return token !== null && token.length > 0;
 }
 
+/**
+ * Validate the token by making a lightweight API call to Shopify.
+ * Returns the shop name if valid, null if invalid/expired.
+ */
+export async function validateShopifyToken(): Promise<string | null> {
+  try {
+    const token = await getAccessToken();
+    if (!token) return null;
+    const shopUrl = await getShopUrl();
+    if (!shopUrl) return null;
+
+    const url = `https://${shopUrl}/admin/api/${API_VERSION}/shop.json`;
+    const res = await rateLimitedFetch(url, {
+      method: "GET",
+      headers: {
+        "X-Shopify-Access-Token": token,
+        "Content-Type": "application/json",
+      },
+    });
+    if (!res.ok) return null;
+    const data = await res.json();
+    return data?.shop?.name ?? shopUrl;
+  } catch {
+    return null;
+  }
+}
+
 export async function getShopInfo(): Promise<string | null> {
   const connected = await isShopifyConnected();
   if (!connected) return null;

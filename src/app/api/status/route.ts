@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { isShopifyConnected } from "@/lib/shopify/client";
+import { isShopifyConnected, validateShopifyToken } from "@/lib/shopify/client";
 import { isMetaConnected } from "@/lib/meta/client";
 import { getTableCounts, getApiCredentialsFromDB } from "@/lib/supabase/queries";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -30,10 +30,15 @@ export async function GET() {
     result.supabase = { connected: false, region: null, tables: {} };
   }
 
-  // ── Shopify status ──
+  // ── Shopify status (validates token against API) ──
   try {
-    const connected = await isShopifyConnected();
-    result.shopify = { connected };
+    const hasToken = await isShopifyConnected();
+    if (hasToken) {
+      const shopName = await validateShopifyToken();
+      result.shopify = { connected: !!shopName };
+    } else {
+      result.shopify = { connected: false };
+    }
   } catch {
     result.shopify = { connected: false };
   }
