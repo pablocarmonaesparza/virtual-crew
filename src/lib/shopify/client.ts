@@ -2,7 +2,7 @@ import { promises as fs } from "fs";
 import path from "path";
 import { createAdminClient } from "@/lib/supabase/admin";
 
-const API_VERSION = "2024-01";
+const API_VERSION = "2026-01";
 
 interface ShopifyTokenData {
   access_token: string;

@@ -16,6 +16,15 @@ export async function GET(request: NextRequest) {
   const shop = searchParams.get("shop");
   const appUrl = (process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000").trim();
 
+  // HMAC is required — reject any callback that omits it
+  if (!hmac) {
+    console.error("Shopify callback missing hmac parameter");
+    return NextResponse.json(
+      { error: "Missing HMAC — request not from Shopify" },
+      { status: 403 }
+    );
+  }
+
   // Verify CSRF state
   const storedState = request.cookies.get("shopify_oauth_state")?.value;
   if (!state || !storedState || state !== storedState) {
@@ -32,22 +41,28 @@ export async function GET(request: NextRequest) {
     );
   }
 
+  // Validate shop hostname from callback param
+  if (!shop || !shop.endsWith(".myshopify.com")) {
+    return NextResponse.json(
+      { error: "Invalid or missing shop parameter" },
+      { status: 400 }
+    );
+  }
+
   const clientId = process.env.SHOPIFY_CLIENT_ID?.trim();
   const clientSecret = process.env.SHOPIFY_CLIENT_SECRET?.trim();
-  // Use shop from callback, then from cookie, then from env
-  const shopUrl = (shop
-    || request.cookies.get("shopify_oauth_shop")?.value
-    || process.env.SHOPIFY_STORE_URL || "").trim();
+  // Use validated shop from callback param
+  const shopUrl = shop.trim();
 
-  if (!clientId || !clientSecret || !shopUrl) {
+  if (!clientId || !clientSecret) {
     return NextResponse.json(
       { error: "Missing Shopify configuration" },
       { status: 500 }
     );
   }
 
-  // Verify HMAC from Shopify (authenticity check)
-  if (hmac && clientSecret) {
+  // Verify HMAC from Shopify (authenticity check) — timing-safe compare
+  {
     const params = new URLSearchParams(searchParams);
     params.delete("hmac");
     // Sort params alphabetically for HMAC computation
@@ -57,7 +72,13 @@ export async function GET(request: NextRequest) {
       .createHmac("sha256", clientSecret)
       .update(message)
       .digest("hex");
-    if (computedHmac !== hmac) {
+    // Use timing-safe comparison to prevent timing attacks
+    const hmacBuffer = Buffer.from(hmac, "hex");
+    const computedBuffer = Buffer.from(computedHmac, "hex");
+    if (
+      hmacBuffer.length !== computedBuffer.length ||
+      !crypto.timingSafeEqual(hmacBuffer, computedBuffer)
+    ) {
       console.error("Shopify HMAC verification failed");
       return NextResponse.json(
         { error: "HMAC verification failed — request may not be from Shopify" },
@@ -151,15 +172,6 @@ export async function GET(request: NextRequest) {
     const response = NextResponse.redirect(redirectUrl.toString());
     response.cookies.delete("shopify_oauth_state");
     response.cookies.delete("shopify_oauth_shop");
-
-    // Set token as HTTP-only cookie (fallback persistence)
-    response.cookies.set("shopify_access_token", tokenData.access_token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "lax",
-      path: "/",
-      maxAge: 60 * 60 * 24 * 365, // 1 year (Shopify tokens don't expire)
-    });
 
     return response;
   } catch (error) {
