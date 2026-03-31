@@ -77,7 +77,6 @@ export function FilterBar() {
           <SelectContent>
             <SelectItem value="all">All Channels</SelectItem>
             <SelectItem value="shopify">D2C / Shopify</SelectItem>
-            <SelectItem value="amazon">Amazon</SelectItem>
           </SelectContent>
         </Select>
       </FilterGroup>
@@ -126,7 +125,6 @@ export function FilterBar() {
           <SelectContent>
             <SelectItem value="all">All Platforms</SelectItem>
             <SelectItem value="meta">Meta Ads</SelectItem>
-            <SelectItem value="amazon_ads">Amazon Ads</SelectItem>
           </SelectContent>
         </Select>
       </FilterGroup>

@@ -7,28 +7,45 @@ import { Play, MessageCircle, RefreshCw, PanelLeft } from "lucide-react";
 import { useToast } from "@/components/ui/toast";
 
 export function Header() {
-  const { isRunning, setIsRunning, toggleChat, isChatOpen, setSidebarOpen, setLatestRecommendation, setActiveTab } =
+  const { isRunning, setIsRunning, toggleChat, isChatOpen, setSidebarOpen, setLatestRecommendation, setActiveTab, setRunAnalysisResult } =
     useDashboardStore();
   const { toast } = useToast();
 
   const handleRun = async () => {
     setIsRunning(true);
+    let analysisOk = false;
+    let recOk = false;
+
     try {
-      const response = await fetch("/api/recommendations", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ data: { month: "2026-03", trigger: "manual_run" } }),
-      });
-      if (response.ok) {
-        const result = await response.json();
-        setLatestRecommendation(result);
+      const [analysisRes, recRes] = await Promise.allSettled([
+        fetch("/api/run-analysis", { method: "POST" }),
+        fetch("/api/recommendations", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ data: { month: "2026-03", trigger: "manual_run" } }),
+        }),
+      ]);
+
+      if (analysisRes.status === "fulfilled" && analysisRes.value.ok) {
+        const analysisData = await analysisRes.value.json();
+        setRunAnalysisResult(analysisData);
+        analysisOk = true;
+      }
+
+      if (recRes.status === "fulfilled" && recRes.value.ok) {
+        const recData = await recRes.value.json();
+        setLatestRecommendation(recData);
+        recOk = true;
+      }
+
+      if (analysisOk) {
         setActiveTab("recommendations");
         toast("Analysis complete");
       } else {
-        toast("Analysis failed — using cached data", "error");
+        toast("Analysis failed — connect Shopify or Meta Ads to generate results", "error");
       }
     } catch {
-      toast("Analysis failed — using cached data", "error");
+      toast("Analysis failed — check your connections", "error");
     } finally {
       setIsRunning(false);
     }

@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest, NextResponse, after } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import crypto from "crypto";
 
@@ -172,6 +172,20 @@ export async function GET(request: NextRequest) {
       } catch (supabaseErr) {
         console.error("Failed to save Shopify credential to Supabase:", supabaseErr);
       }
+    }
+
+    // Schedule backfill after redirect — uses after() so it runs post-response in serverless
+    if (tokenPersisted) {
+      const cronSecret = process.env.CRON_SECRET;
+      const backfillUrl = new URL("/api/shopify/backfill", appUrl).toString();
+      after(async () => {
+        await fetch(backfillUrl, {
+          method: "POST",
+          headers: cronSecret ? { Authorization: `Bearer ${cronSecret}` } : {},
+        }).catch((err) => {
+          console.error("Backfill trigger failed:", err);
+        });
+      });
     }
 
     // Clear OAuth cookies and redirect to settings

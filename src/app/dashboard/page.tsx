@@ -10,6 +10,8 @@ import { AdSpendTable } from "@/components/tables/AdSpendTable";
 import { CampaignTable } from "@/components/tables/CampaignTable";
 import { CACTable } from "@/components/tables/CACTable";
 import { ForecastChart } from "@/components/charts/ForecastChart";
+import { SeasonalityChart } from "@/components/charts/SeasonalityChart";
+import { DriverBreakdown } from "@/components/charts/DriverBreakdown";
 import { AdSpendChart } from "@/components/charts/AdSpendChart";
 import { CACChart } from "@/components/charts/CACChart";
 import { NewVsRepeatChart } from "@/components/charts/NewVsRepeatChart";
@@ -74,6 +76,12 @@ export default function DashboardPage() {
           <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
             <ForecastChart />
             <ForecastTable />
+          </div>
+          <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+            <div className="xl:col-span-2">
+              <SeasonalityChart />
+            </div>
+            <DriverBreakdown />
           </div>
         </TabsContent>
 

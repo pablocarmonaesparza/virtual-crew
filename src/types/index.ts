@@ -250,3 +250,43 @@ export interface ChatMessage {
   content: string;
   timestamp: string;
 }
+
+export interface RunAnalysisDataPoint {
+  period: string; // "2026-03"
+  units: number;
+  revenue: number;
+}
+
+export interface SeasonalityMonth {
+  month: number; // 1-12
+  label: string; // "Jan", "Feb" etc
+  index: number; // 1.0 = average, >1.0 = above average
+  isPeak: boolean;
+  isTrough: boolean;
+}
+
+export interface ForecastDriver {
+  label: string;
+  value: number; // multiplier like 1.08 means +8%
+  pctChange: number; // +8 means +8%
+  direction: "up" | "down" | "neutral";
+}
+
+export interface RunAnalysisResult {
+  actuals: RunAnalysisDataPoint[];
+  forecast: Array<{
+    period: string;
+    baseline: number;
+    ambitious: number;
+    forecast: number;
+    confidenceLower: number;
+    confidenceUpper: number;
+    seasonalityIndex: number;
+    marketingUplift: number;
+  }>;
+  seasonality: SeasonalityMonth[];
+  seasonalityComputed: boolean;
+  drivers: ForecastDriver[];
+  dataSource: "shopify" | "defaults";
+  generatedAt: string;
+}
