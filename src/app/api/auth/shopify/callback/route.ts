@@ -1,15 +1,18 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import crypto from "crypto";
 
 /**
  * Shopify OAuth callback.
  * Exchanges authorization code for permanent access token.
- * Stores token in Supabase only (no file writes for Vercel compatibility).
+ * Verifies HMAC + CSRF state.
+ * Stores token in Supabase (requires SUPABASE_SERVICE_ROLE_KEY).
  */
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const code = searchParams.get("code");
   const state = searchParams.get("state");
+  const hmac = searchParams.get("hmac");
   const shop = searchParams.get("shop");
   const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
 
@@ -43,6 +46,26 @@ export async function GET(request: NextRequest) {
     );
   }
 
+  // Verify HMAC from Shopify (authenticity check)
+  if (hmac && clientSecret) {
+    const params = new URLSearchParams(searchParams);
+    params.delete("hmac");
+    // Sort params alphabetically for HMAC computation
+    const sortedParams = new URLSearchParams([...params.entries()].sort());
+    const message = sortedParams.toString();
+    const computedHmac = crypto
+      .createHmac("sha256", clientSecret)
+      .update(message)
+      .digest("hex");
+    if (computedHmac !== hmac) {
+      console.error("Shopify HMAC verification failed");
+      return NextResponse.json(
+        { error: "HMAC verification failed — request may not be from Shopify" },
+        { status: 403 }
+      );
+    }
+  }
+
   try {
     // Exchange code for permanent access token
     const tokenResponse = await fetch(
@@ -74,9 +97,15 @@ export async function GET(request: NextRequest) {
 
     // Save credential to Supabase api_credentials table
     let tokenPersisted = false;
-    try {
-      const supabase = createAdminClient();
-      if (supabase) {
+    const supabase = createAdminClient();
+
+    if (!supabase) {
+      console.error(
+        "SUPABASE_SERVICE_ROLE_KEY is not set — Shopify token cannot be saved to database. " +
+        "Set this environment variable in Vercel to enable token persistence."
+      );
+    } else {
+      try {
         // Get or create organization
         const { data: org } = await supabase
           .from("organizations")
@@ -85,60 +114,45 @@ export async function GET(request: NextRequest) {
           .single();
 
         if (org) {
-          // Save access token
-          const { error: tokenError } = await supabase.from("api_credentials").upsert(
-            {
-              organization_id: org.id,
-              platform: "shopify",
-              credential_name: "access_token",
-              credential_value: tokenData.access_token,
-              is_active: true,
-              updated_at: new Date().toISOString(),
-            },
-            { onConflict: "organization_id,platform,credential_name", ignoreDuplicates: false }
-          );
+          const now = new Date().toISOString();
+          const credentials = [
+            { name: "access_token", value: tokenData.access_token },
+            { name: "store_url", value: shopUrl },
+            { name: "scope", value: tokenData.scope },
+          ];
 
-          if (!tokenError) tokenPersisted = true;
-
-          // Save shop URL
-          await supabase.from("api_credentials").upsert(
-            {
-              organization_id: org.id,
-              platform: "shopify",
-              credential_name: "store_url",
-              credential_value: shopUrl,
-              is_active: true,
-              updated_at: new Date().toISOString(),
-            },
-            { onConflict: "organization_id,platform,credential_name", ignoreDuplicates: false }
-          );
-
-          // Save scope
-          await supabase.from("api_credentials").upsert(
-            {
-              organization_id: org.id,
-              platform: "shopify",
-              credential_name: "scope",
-              credential_value: tokenData.scope,
-              is_active: true,
-              updated_at: new Date().toISOString(),
-            },
-            { onConflict: "organization_id,platform,credential_name", ignoreDuplicates: false }
-          );
+          for (const cred of credentials) {
+            const { error } = await supabase.from("api_credentials").upsert(
+              {
+                organization_id: org.id,
+                platform: "shopify",
+                credential_name: cred.name,
+                credential_value: cred.value,
+                is_active: true,
+                updated_at: now,
+              },
+              { onConflict: "organization_id,platform,credential_name", ignoreDuplicates: false }
+            );
+            if (!error && cred.name === "access_token") tokenPersisted = true;
+          }
+        } else {
+          console.error("No organization found in Supabase — cannot save Shopify credentials");
         }
+      } catch (supabaseErr) {
+        console.error("Failed to save Shopify credential to Supabase:", supabaseErr);
       }
-    } catch (supabaseErr) {
-      console.error("Failed to save Shopify credential to Supabase:", supabaseErr);
     }
 
     // Clear OAuth cookies and redirect to settings
-    const redirectParam = tokenPersisted ? "shopify=connected" : "shopify=connected&warning=token_not_persisted";
+    const redirectParam = tokenPersisted
+      ? "shopify=connected"
+      : "shopify=connected&warning=token_not_persisted";
     const redirectUrl = new URL(`/dashboard/settings?${redirectParam}`, appUrl);
     const response = NextResponse.redirect(redirectUrl.toString());
     response.cookies.delete("shopify_oauth_state");
     response.cookies.delete("shopify_oauth_shop");
 
-    // Set token as HTTP-only cookie (Vercel-compatible persistence)
+    // Set token as HTTP-only cookie (fallback persistence)
     response.cookies.set("shopify_access_token", tokenData.access_token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
