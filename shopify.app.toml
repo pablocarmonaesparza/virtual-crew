@@ -6,9 +6,6 @@ name = "Virtual Crew S&OP"
 application_url = "https://virtual-crew-sop.vercel.app/dashboard"
 embedded = false
 
-[distribution]
-kind = "custom"
-
 [access_scopes]
 scopes = "read_orders,read_products,read_inventory,read_customers"
 
@@ -17,3 +14,6 @@ redirect_urls = [
   "https://virtual-crew-sop.vercel.app/api/auth/shopify/callback",
   "http://localhost:3000/api/auth/shopify/callback"
 ]
+
+[webhooks]
+api_version = "2026-01"
