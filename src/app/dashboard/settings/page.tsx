@@ -147,7 +147,7 @@ function ShopifyIntegrationCard({ integration }: { integration: IntegrationConfi
   const handleSyncNow = async () => {
     setSyncing(true);
     try {
-      const res = await fetch("/api/shopify/backfill", { method: "POST" });
+      const res = await fetch("/api/shopify/trigger-backfill", { method: "POST" });
       if (res.ok) {
         toast("Backfill started — historical data is syncing in the background");
       } else {

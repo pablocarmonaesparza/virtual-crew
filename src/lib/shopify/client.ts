@@ -366,10 +366,16 @@ export async function getOrders(params?: {
   return items as ShopifyRawOrder[];
 }
 
-export async function getProducts(): Promise<ShopifyRawProduct[]> {
+export async function getProducts(
+  options: { includeArchived?: boolean } = {}
+): Promise<ShopifyRawProduct[]> {
+  // Default: include active, archived AND draft so historical sales for
+  // archived SKUs map to real product data instead of placeholders.
+  // Pass `includeArchived: false` to limit to active only.
+  const status = options.includeArchived === false ? "active" : "any";
   const items = await shopifyPaginatedRequest<{
     products: ShopifyRawProduct[];
-  }>({ endpoint: "products.json", params: { status: "active" } }, "products");
+  }>({ endpoint: "products.json", params: { status } }, "products");
 
   return items as ShopifyRawProduct[];
 }

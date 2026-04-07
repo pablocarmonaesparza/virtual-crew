@@ -1,59 +1,121 @@
 import { NextRequest, NextResponse } from "next/server";
-import { isShopifyConnected, getProducts } from "@/lib/shopify/client";
+import { validateShopifyToken, getProducts } from "@/lib/shopify/client";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 /**
  * GET /api/shopify/products
- * Syncs Shopify products to Supabase products table.
- * Can be called manually or via cron.
+ * Syncs Shopify products to the existing Supabase products table.
  */
 export async function GET(request: NextRequest) {
-  const authHeader = request.headers.get("authorization");
+  // Require cron secret when configured (no anonymous access in production)
   const cronSecret = process.env.CRON_SECRET;
-  if (cronSecret && authHeader !== `Bearer ${cronSecret}`) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (cronSecret) {
+    const authHeader = request.headers.get("authorization");
+    if (authHeader !== `Bearer ${cronSecret}`) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
   }
 
-  const connected = await isShopifyConnected();
-  if (!connected) {
-    return NextResponse.json({ error: "Shopify not connected" }, { status: 503 });
+  const shopName = await validateShopifyToken();
+  if (!shopName) {
+    return NextResponse.json({ error: "Shopify token invalid or expired" }, { status: 503 });
+  }
+
+  const supabase = createAdminClient();
+  if (!supabase) {
+    return NextResponse.json({ error: "Supabase not configured" }, { status: 503 });
+  }
+
+  const { data: org } = await supabase
+    .from("organizations")
+    .select("id")
+    .limit(1)
+    .single();
+
+  if (!org) {
+    return NextResponse.json({ error: "No organization found" }, { status: 500 });
   }
 
   try {
     const products = await getProducts();
 
-    const supabase = createAdminClient();
-    if (!supabase) {
-      // Return products without persisting
-      return NextResponse.json({ products: products.length, persisted: false });
+    // Build SKU → row map. When the same SKU appears on multiple variants
+    // (Shopify doesn't enforce uniqueness), prefer ACTIVE variants over
+    // archived/draft. This prevents `ON CONFLICT DO UPDATE command cannot
+    // affect row a second time` errors from the upsert.
+    const skuMap = new Map<string, ReturnType<typeof buildRow>>();
+
+    function buildRow(p: typeof products[0], v: typeof products[0]["variants"][0]) {
+      return {
+        organization_id: org!.id,
+        sku: v.sku || `UNKNOWN-${p.id}-${v.id}`,
+        name: `${p.title}${v.title !== "Default Title" ? ` - ${v.title}` : ""}`,
+        product_line: p.product_type || "Other",
+        category: categorizeProduct(p.product_type),
+        unit_price: parseFloat(v.price) || 0,
+        unit_cost: 0,
+        is_active: p.status === "active",
+        metadata: {
+          shopify_product_id: p.id,
+          shopify_variant_id: v.id,
+          variant_title: v.title,
+          inventory_quantity: v.inventory_quantity,
+        },
+        updated_at: new Date().toISOString(),
+      };
     }
 
-    const productRows = products.flatMap((p) =>
-      p.variants.map((v) => ({
-        sku_id: v.sku || `${p.id}-${v.id}`,
-        sku_title: `${p.title}${v.title !== "Default Title" ? ` - ${v.title}` : ""}`,
-        product_type: p.product_type || "Other",
-        category: categorizeProduct(p.product_type),
-        is_active: p.status === "active",
-        updated_at: new Date().toISOString(),
-      }))
-    );
+    for (const p of products) {
+      for (const v of p.variants) {
+        const row = buildRow(p, v);
+        const existing = skuMap.get(row.sku);
+        // Prefer active over inactive when there's a SKU collision
+        if (!existing || (row.is_active && !existing.is_active)) {
+          skuMap.set(row.sku, row);
+        }
+      }
+    }
+    const productRows = Array.from(skuMap.values());
 
-    if (productRows.length > 0) {
-      const { error } = await supabase
+    if (productRows.length === 0) {
+      return NextResponse.json({ products: 0, persisted: 0 });
+    }
+
+    // Upsert in batches of 500 to handle large catalogs (matches the
+    // backfill/buildProductMap paths so behavior stays consistent).
+    const CHUNK = 500;
+    let persisted = 0;
+    const errors: string[] = [];
+    for (let i = 0; i < productRows.length; i += CHUNK) {
+      const batch = productRows.slice(i, i + CHUNK);
+      const { error, count } = await supabase
         .from("products")
-        .upsert(productRows, { onConflict: "sku_id" });
+        .upsert(batch, { onConflict: "organization_id,sku", count: "exact" });
 
       if (error) {
-        console.error("Products upsert error:", error.message);
-        return NextResponse.json({ products: products.length, persisted: false, error: error.message });
+        errors.push(`batch ${i / CHUNK}: ${error.message}`);
+        console.error(`[products] Batch ${i / CHUNK} upsert error:`, error);
+        continue;
       }
+      persisted += count ?? batch.length;
+    }
+
+    if (errors.length > 0) {
+      return NextResponse.json(
+        {
+          products: products.length,
+          variants: productRows.length,
+          persisted,
+          errors,
+        },
+        { status: 207 }
+      );
     }
 
     return NextResponse.json({
       products: products.length,
       variants: productRows.length,
-      persisted: true,
+      persisted,
     });
   } catch (error) {
     console.error("Products sync error:", error);

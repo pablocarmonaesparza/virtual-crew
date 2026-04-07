@@ -34,7 +34,9 @@ export function transformRawOrders(
       result.push({
         order_id: order.name || String(order.id),
         order_date: order.created_at,
-        sku_id: item.sku || `UNKNOWN-${item.product_id}`,
+        // Include variant_id so multiple SKU-less variants of the same product
+        // don't collapse into a single key (collisions in the products table).
+        sku_id: item.sku || `UNKNOWN-${item.product_id}-${item.variant_id}`,
         quantity: item.quantity,
         gross_revenue: parseFloat(item.price) * item.quantity,
         net_revenue:
