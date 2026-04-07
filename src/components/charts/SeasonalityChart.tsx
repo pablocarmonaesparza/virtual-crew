@@ -52,11 +52,11 @@ function SeasonalTooltip({ active, payload, colors }: TooltipProps) {
     >
       <p className="font-semibold mb-1">{d.label}</p>
       <p>Index: <span className="font-medium">{d.index.toFixed(2)}</span></p>
-      <p className={pct >= 0 ? "text-green-600 dark:text-green-400" : "text-amber-600 dark:text-amber-400"}>
+      <p className={pct >= 0 ? "text-green-600 dark:text-green-400" : "text-red-600 dark:text-red-400"}>
         {pct >= 0 ? "+" : ""}{pct}% vs average
       </p>
       {d.isPeak && <p className="text-green-600 dark:text-green-400 font-medium mt-0.5">Peak month</p>}
-      {d.isTrough && <p className="text-amber-600 dark:text-amber-400 font-medium mt-0.5">Trough month</p>}
+      {d.isTrough && <p className="text-red-600 dark:text-red-400 font-medium mt-0.5">Trough month</p>}
     </div>
   );
 }
@@ -74,11 +74,20 @@ export function SeasonalityChart() {
   const data = runAnalysisResult?.seasonality ?? UK_DEFAULTS;
   const isLive = runAnalysisResult?.seasonalityComputed === true;
 
+  // Color rules:
+  //   Current dashboard month → brand
+  //   Peak month → strong green (matches `actual`)
+  //   Trough month → strong red (matches `negative`)
+  //   Above the 1.0 line → light green (matches Badge `positive` background)
+  //   Below the 1.0 line → light red (matches Badge `negative` background)
+  const lightGreen = isDark ? "rgba(74, 222, 128, 0.35)" : "#bbf7d0"; // green-200
+  const lightRed = isDark ? "rgba(248, 113, 113, 0.35)" : "#fecaca"; // red-200
+
   const getBarColor = (entry: SeasonalityMonth) => {
     if (entry.month === currentMonth) return colors.brand;
     if (entry.isPeak) return colors.actual;
-    if (entry.isTrough) return colors.warning;
-    return entry.index >= 1.0 ? colors.brandLight : colors.neutral;
+    if (entry.isTrough) return colors.negative;
+    return entry.index >= 1.0 ? lightGreen : lightRed;
   };
 
   return (
@@ -127,7 +136,7 @@ export function SeasonalityChart() {
             <span className="inline-block w-2.5 h-2.5 rounded-sm" style={{ background: colors.actual }} /> Peak
           </span>
           <span className="flex items-center gap-1">
-            <span className="inline-block w-2.5 h-2.5 rounded-sm" style={{ background: colors.warning }} /> Trough
+            <span className="inline-block w-2.5 h-2.5 rounded-sm" style={{ background: colors.negative }} /> Trough
           </span>
           <span className="flex items-center gap-1">
             <span className="inline-block w-2.5 h-2.5 rounded-sm" style={{ background: colors.brand }} /> Current month
