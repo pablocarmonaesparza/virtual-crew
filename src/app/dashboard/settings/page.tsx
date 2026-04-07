@@ -140,14 +140,9 @@ function StatusBadge({ status }: { status: "connected" | "not_connected" | "warn
 }
 
 function ShopifyIntegrationCard({ integration }: { integration: IntegrationConfig }) {
-  const { shopifyConnected, shopifyStoreName, setShopifyConnected, setShopifyStoreName } = useDashboardStore();
+  const { shopifyConnected, shopifyStoreName } = useDashboardStore();
   const { toast } = useToast();
   const [syncing, setSyncing] = useState(false);
-  const [showTokenForm, setShowTokenForm] = useState(false);
-  const [tokenShop, setTokenShop] = useState("aguademadre.myshopify.com");
-  const [tokenValue, setTokenValue] = useState("");
-  const [setupSecret, setSetupSecret] = useState("");
-  const [connecting, setConnecting] = useState(false);
 
   const handleSyncNow = async () => {
     setSyncing(true);
@@ -163,41 +158,6 @@ function ShopifyIntegrationCard({ integration }: { integration: IntegrationConfi
       toast("Failed to start backfill", "error");
     } finally {
       setSyncing(false);
-    }
-  };
-
-  const handleConnectWithToken = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!tokenShop || !tokenValue || !setupSecret) {
-      toast("All fields are required (shop, token, setup secret)", "error");
-      return;
-    }
-    setConnecting(true);
-    try {
-      const res = await fetch("/api/shopify/connect-token", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          shop: tokenShop,
-          token: tokenValue,
-          setup_secret: setupSecret,
-        }),
-      });
-      const data = await res.json();
-      if (res.ok && data.success) {
-        setShopifyConnected(true);
-        if (data.shop) setShopifyStoreName(data.shop);
-        setShowTokenForm(false);
-        setTokenValue("");
-        setSetupSecret("");
-        toast(`Connected to ${data.shop || data.shop_url}`);
-      } else {
-        toast(data.error || "Connection failed", "error");
-      }
-    } catch {
-      toast("Connection failed — check the console", "error");
-    } finally {
-      setConnecting(false);
     }
   };
 
@@ -220,117 +180,19 @@ function ShopifyIntegrationCard({ integration }: { integration: IntegrationConfi
               Connected
             </Badge>
           ) : (
-            <div className="flex items-center gap-1.5">
-              <a href="/api/auth/shopify">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="h-7 text-xs gap-1"
-                  title="Connect via OAuth (requires app installed in your Partner organization)"
-                >
-                  OAuth
-                </Button>
-              </a>
-              <Button
-                variant="default"
-                size="sm"
-                className="h-7 text-xs gap-1"
-                onClick={() => {
-                  if (showTokenForm) {
-                    // Clear secrets when canceling so they don't linger in memory
-                    setTokenValue("");
-                    setSetupSecret("");
-                  }
-                  setShowTokenForm((v) => !v);
-                }}
-                title="Connect by pasting an Admin API token"
-              >
-                {showTokenForm ? "Cancel" : "Connect"}
-                {!showTokenForm && <ArrowRight className="h-3 w-3" />}
+            <a href="/api/auth/shopify">
+              <Button variant="default" size="sm" className="h-7 text-xs gap-1">
+                Connect
+                <ArrowRight className="h-3 w-3" />
               </Button>
-            </div>
+            </a>
           )}
         </div>
         <p className="text-xs text-muted-foreground mb-1">{integration.description}</p>
         {shopifyConnected && shopifyStoreName && (
           <p className="text-xs text-green-700 dark:text-green-400 font-medium mb-2">{shopifyStoreName}</p>
         )}
-        {!shopifyConnected && !showTokenForm && <div className="mb-2" />}
-
-        {/* ── Token connection form ── */}
-        {!shopifyConnected && showTokenForm && (
-          <div className="mt-3 mb-3 rounded-md border border-border/50 bg-muted/30 p-3 space-y-3">
-            <details className="text-[11px] text-muted-foreground">
-              <summary className="cursor-pointer font-medium text-foreground hover:text-primary">
-                How do I get my Shopify Admin API token? (click to expand)
-              </summary>
-              <ol className="mt-2 ml-4 list-decimal space-y-1.5 leading-relaxed">
-                <li>Open your Shopify admin at <code className="text-[10px]">{tokenShop || "yourstore.myshopify.com"}/admin</code></li>
-                <li>Go to <strong>Settings → Apps and sales channels</strong></li>
-                <li>Click <strong>Develop apps</strong> (top right)</li>
-                <li>Click <strong>Allow custom app development</strong> (one-time, agree to terms)</li>
-                <li>Click <strong>Create an app</strong>. Name it &quot;Virtual Crew S&amp;OP&quot;</li>
-                <li>Click <strong>Configure Admin API scopes</strong> and enable: <code className="text-[10px]">read_orders</code>, <code className="text-[10px]">read_products</code>, <code className="text-[10px]">read_inventory</code>, <code className="text-[10px]">read_customers</code></li>
-                <li>Save → click <strong>Install app</strong></li>
-                <li>Reveal and copy the <strong>Admin API access token</strong> (starts with <code className="text-[10px]">shpat_</code>)</li>
-                <li>Paste it below ↓</li>
-              </ol>
-            </details>
-
-            <form onSubmit={handleConnectWithToken} className="space-y-2">
-              <div>
-                <label className="text-[10px] uppercase tracking-wider text-muted-foreground block mb-1">
-                  Shop URL
-                </label>
-                <input
-                  type="text"
-                  value={tokenShop}
-                  onChange={(e) => setTokenShop(e.target.value)}
-                  placeholder="yourstore.myshopify.com"
-                  className="w-full text-xs px-2 py-1.5 rounded border border-border bg-background"
-                  required
-                />
-              </div>
-              <div>
-                <label className="text-[10px] uppercase tracking-wider text-muted-foreground block mb-1">
-                  Admin API Access Token
-                </label>
-                <input
-                  type="password"
-                  value={tokenValue}
-                  onChange={(e) => setTokenValue(e.target.value)}
-                  placeholder="shpat_..."
-                  className="w-full text-xs px-2 py-1.5 rounded border border-border bg-background font-mono"
-                  required
-                  autoComplete="off"
-                />
-              </div>
-              <div>
-                <label className="text-[10px] uppercase tracking-wider text-muted-foreground block mb-1">
-                  Setup Secret <span className="normal-case text-muted-foreground/60">(provided by your administrator)</span>
-                </label>
-                <input
-                  type="password"
-                  value={setupSecret}
-                  onChange={(e) => setSetupSecret(e.target.value)}
-                  placeholder="Setup secret"
-                  className="w-full text-xs px-2 py-1.5 rounded border border-border bg-background"
-                  required
-                  autoComplete="off"
-                />
-              </div>
-              <Button
-                type="submit"
-                disabled={connecting}
-                size="sm"
-                className="h-7 text-xs w-full"
-              >
-                {connecting ? "Validating..." : "Connect store"}
-              </Button>
-            </form>
-          </div>
-        )}
-
+        {!shopifyConnected && <div className="mb-2" />}
         <div className="flex items-center justify-between">
           <div className="flex gap-1 flex-wrap">
             {integration.tables.map((t) => (

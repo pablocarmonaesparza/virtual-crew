@@ -126,6 +126,17 @@ export async function GET(request: NextRequest) {
       scope: string;
     };
 
+    // Defensive warning: if SHOPIFY_ACCESS_TOKEN env var is set, getAccessToken()
+    // will keep returning it even after we save the new token to Supabase.
+    // Operators should remove the env var when migrating to OAuth-based credentials.
+    if (process.env.SHOPIFY_ACCESS_TOKEN?.trim()) {
+      console.warn(
+        "[shopify-callback] SHOPIFY_ACCESS_TOKEN env var is set — runtime will " +
+        "continue using it even though a fresh OAuth token was just saved to Supabase. " +
+        "Remove the env var on Vercel for the new OAuth token to take effect."
+      );
+    }
+
     // Save credential to Supabase api_credentials table
     let tokenPersisted = false;
     const supabase = createAdminClient();

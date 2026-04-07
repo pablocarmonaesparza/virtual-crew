@@ -121,15 +121,11 @@ async function getTokenFromSupabase(): Promise<string | null> {
 async function getAccessToken(): Promise<string | null> {
   // Priority order:
   //   1. SHOPIFY_ACCESS_TOKEN env var  — explicit operator override (local dev,
-  //                                      emergency rollback, debugging).
-  //                                      Note: /api/shopify/connect-token REFUSES
-  //                                      to operate when this env var is set,
-  //                                      so the UI flow and the env var don't
-  //                                      compete in the same environment.
-  //   2. Supabase api_credentials      — primary store in production. Updated
-  //                                      by OAuth callback AND the manual
-  //                                      /api/shopify/connect-token flow.
-  //   3. File fallback                 — legacy local dev only.
+  //                                      emergency rollback, debugging)
+  //   2. Supabase api_credentials      — populated by /api/auth/shopify/callback
+  //                                      after the merchant clicks the install
+  //                                      link generated from Partner Dashboard
+  //   3. File fallback                 — legacy local dev only
   const envToken = getTokenFromEnv();
   if (envToken) return envToken;
 
