@@ -119,15 +119,23 @@ async function getTokenFromSupabase(): Promise<string | null> {
 }
 
 async function getAccessToken(): Promise<string | null> {
-  // 1. Prefer env variable (local dev override)
+  // Priority order:
+  //   1. SHOPIFY_ACCESS_TOKEN env var  — explicit operator override (local dev,
+  //                                      emergency rollback, debugging).
+  //                                      Note: /api/shopify/connect-token REFUSES
+  //                                      to operate when this env var is set,
+  //                                      so the UI flow and the env var don't
+  //                                      compete in the same environment.
+  //   2. Supabase api_credentials      — primary store in production. Updated
+  //                                      by OAuth callback AND the manual
+  //                                      /api/shopify/connect-token flow.
+  //   3. File fallback                 — legacy local dev only.
   const envToken = getTokenFromEnv();
   if (envToken) return envToken;
 
-  // 2. Try Supabase api_credentials table (production — Vercel compatible)
   const supabaseToken = await getTokenFromSupabase();
   if (supabaseToken) return supabaseToken;
 
-  // 3. Fallback to file (legacy local dev)
   const fileData = await getTokenFromFile();
   if (fileData?.access_token) return fileData.access_token;
 
