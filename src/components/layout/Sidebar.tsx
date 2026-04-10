@@ -18,13 +18,17 @@ import {
   BarChart3,
   Users,
   Lightbulb,
+  BookOpen,
+  Wallet,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 
 const DASHBOARD_TABS = [
   { value: "forecast", label: "Forecast", icon: Target },
   { value: "sku", label: "SKU Detail", icon: Package },
+  { value: "product-bible", label: "Product Bible", icon: BookOpen },
   { value: "ads", label: "Ad Spend", icon: BarChart3 },
+  { value: "budget", label: "Budget Planning", icon: Wallet },
   { value: "cac", label: "CAC", icon: Users },
   { value: "recommendations", label: "Recommendations", icon: Lightbulb },
 ] as const;
@@ -35,7 +39,7 @@ export function Sidebar() {
   const router = useRouter();
   const isDashboard = pathname === "/dashboard";
   const isSettings = pathname.startsWith("/dashboard/settings");
-  const [dashboardExpanded, setDashboardExpanded] = useState(true);
+  const [dashboardExpanded, setDashboardExpanded] = useState(false);
 
   const handleLogout = async () => {
     const supabase = createClient();

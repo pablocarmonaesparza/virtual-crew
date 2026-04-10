@@ -229,11 +229,13 @@ export interface CACTableRow {
   cac_mom_change: number;
 }
 
-export type Channel = "all" | "shopify" | "amazon";
+export type Channel = "all" | "shopify" | "amazon" | "wholesale" | "export";
 export type ProductCategory = "all" | "drinks" | "tea" | "health_products";
 export type CustomerType = "all" | "new" | "returning";
 export type AdsPlatform = "all" | "meta" | "amazon_ads";
 export type TimeRange = "mtd" | "ytd" | "3m" | "6m" | "12m";
+export type ProductTier = "all" | "premium" | "core" | "value";
+export type Flavour = "all" | "original" | "ginger" | "turmeric" | "mixed";
 
 export interface DashboardFilters {
   channel: Channel;
@@ -242,6 +244,47 @@ export interface DashboardFilters {
   adsPlatform: AdsPlatform;
   selectedMonth: string;
   timeRange: TimeRange;
+  tier: ProductTier;
+  flavour: Flavour;
+}
+
+export interface ProductBibleEntry {
+  sku_id: string;
+  sku_title: string;
+  tier: "premium" | "core" | "value";
+  pack_size: number;
+  flavour: string;
+  product_title: string;
+  category: "drinks" | "tea" | "health_products";
+  channels: Channel[];
+  amazon_parent_asin?: string;
+  amazon_child_asin?: string;
+  is_active: boolean;
+}
+
+export interface AdBudgetPlan {
+  month: string;
+  platform: string;
+  campaign_category: string;
+  tier: string;
+  planned_budget: number;
+  actual_spend: number | null;
+  variance: number | null;
+  variance_pct: number | null;
+}
+
+export interface CategoryForecast {
+  category: string;
+  month: string;
+  channel: Channel;
+  baseline: number;
+  seasonality_index: number;
+  marketing_uplift: number;
+  price_impact: number;
+  system_forecast: number;
+  ambitious_forecast: number;
+  actual: number | null;
+  accuracy_pct: number | null;
 }
 
 export interface ChatMessage {

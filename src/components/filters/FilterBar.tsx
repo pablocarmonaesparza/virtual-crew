@@ -10,7 +10,7 @@ import {
 import { useDashboardStore } from "@/stores/dashboard-store";
 import { Button } from "@/components/ui/button";
 import { RotateCcw } from "lucide-react";
-import type { Channel, ProductCategory, CustomerType, AdsPlatform, TimeRange } from "@/types";
+import type { Channel, ProductCategory, CustomerType, AdsPlatform, TimeRange, ProductTier, Flavour } from "@/types";
 import { useToast } from "@/components/ui/toast";
 
 export function FilterBar() {
@@ -23,7 +23,9 @@ export function FilterBar() {
     filters.customerType !== "all" ||
     filters.adsPlatform !== "all" ||
     filters.selectedMonth !== "2026-03" ||
-    filters.timeRange !== "6m";
+    filters.timeRange !== "6m" ||
+    filters.tier !== "all" ||
+    filters.flavour !== "all";
 
   return (
     <div className="flex flex-wrap items-end gap-3 rounded-lg border border-border/30 bg-card p-3">
@@ -76,7 +78,10 @@ export function FilterBar() {
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All Channels</SelectItem>
-            <SelectItem value="shopify">D2C / Shopify</SelectItem>
+            <SelectItem value="shopify">B2C / Shopify</SelectItem>
+            <SelectItem value="amazon">Amazon</SelectItem>
+            <SelectItem value="wholesale">Wholesale</SelectItem>
+            <SelectItem value="export">Export</SelectItem>
           </SelectContent>
         </Select>
       </FilterGroup>
@@ -114,6 +119,41 @@ export function FilterBar() {
         </Select>
       </FilterGroup>
 
+      <FilterGroup label="Tier">
+        <Select
+          value={filters.tier}
+          onValueChange={(v) => setFilter("tier", v as ProductTier)}
+        >
+          <SelectTrigger className="w-[120px] h-8 text-xs">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Tiers</SelectItem>
+            <SelectItem value="premium">Premium</SelectItem>
+            <SelectItem value="core">Core</SelectItem>
+            <SelectItem value="value">Value</SelectItem>
+          </SelectContent>
+        </Select>
+      </FilterGroup>
+
+      <FilterGroup label="Flavour">
+        <Select
+          value={filters.flavour}
+          onValueChange={(v) => setFilter("flavour", v as Flavour)}
+        >
+          <SelectTrigger className="w-[120px] h-8 text-xs">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Flavours</SelectItem>
+            <SelectItem value="original">Original</SelectItem>
+            <SelectItem value="ginger">Ginger</SelectItem>
+            <SelectItem value="turmeric">Turmeric</SelectItem>
+            <SelectItem value="mixed">Mixed</SelectItem>
+          </SelectContent>
+        </Select>
+      </FilterGroup>
+
       <FilterGroup label="Ads Platform">
         <Select
           value={filters.adsPlatform}
@@ -125,6 +165,7 @@ export function FilterBar() {
           <SelectContent>
             <SelectItem value="all">All Platforms</SelectItem>
             <SelectItem value="meta">Meta Ads</SelectItem>
+            <SelectItem value="amazon_ads">Amazon Ads</SelectItem>
           </SelectContent>
         </Select>
       </FilterGroup>

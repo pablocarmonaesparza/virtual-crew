@@ -47,6 +47,8 @@ const defaultFilters: DashboardFilters = {
   adsPlatform: "all",
   selectedMonth: "2026-03",
   timeRange: "6m",
+  tier: "all",
+  flavour: "all",
 };
 
 export const useDashboardStore = create<DashboardState>((set) => ({

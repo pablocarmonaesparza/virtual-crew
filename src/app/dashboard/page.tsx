@@ -16,6 +16,8 @@ import { AdSpendChart } from "@/components/charts/AdSpendChart";
 import { CACChart } from "@/components/charts/CACChart";
 import { NewVsRepeatChart } from "@/components/charts/NewVsRepeatChart";
 import { RecommendationsPanel } from "@/components/recommendations/RecommendationsPanel";
+import { ProductBibleTable } from "@/components/tables/ProductBibleTable";
+import { BudgetPlanningTable } from "@/components/tables/BudgetPlanningTable";
 import { DataSourceIndicator } from "@/components/layout/DataSourceIndicator";
 import { SetupBanner } from "@/components/onboarding/SetupBanner";
 import { useDashboardStore } from "@/stores/dashboard-store";
@@ -89,12 +91,20 @@ export default function DashboardPage() {
           <SKUTable />
         </TabsContent>
 
+        <TabsContent value="product-bible" className="space-y-6">
+          <ProductBibleTable />
+        </TabsContent>
+
         <TabsContent value="ads" className="space-y-6">
           <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
             <AdSpendChart />
             <AdSpendTable />
           </div>
           <CampaignTable />
+        </TabsContent>
+
+        <TabsContent value="budget" className="space-y-6">
+          <BudgetPlanningTable />
         </TabsContent>
 
         <TabsContent value="cac" className="space-y-6">
