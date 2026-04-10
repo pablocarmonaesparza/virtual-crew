@@ -71,6 +71,7 @@ export function BudgetPlanningTable() {
       if (filters.adsPlatform === "meta" && r.platform !== "Meta Ads") return false;
       if (filters.adsPlatform === "amazon_ads" && r.platform !== "Amazon Ads") return false;
     }
+    if (filters.tier !== "all" && r.tier.toLowerCase() !== filters.tier) return false;
     return true;
   });
 

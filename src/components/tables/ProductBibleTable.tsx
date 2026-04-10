@@ -67,7 +67,7 @@ export function ProductBibleTable() {
 
   const filtered = products.filter((p) => {
     if (filters.tier !== "all" && p.tier !== filters.tier) return false;
-    if (filters.flavour !== "all" && p.flavour.toLowerCase() !== filters.flavour) return false;
+    if (filters.flavour !== "all" && (p.flavour || "").toLowerCase() !== filters.flavour.toLowerCase()) return false;
     if (filters.category !== "all" && p.category !== filters.category) return false;
     if (filters.channel !== "all" && !p.channels.includes(filters.channel)) return false;
     return true;
