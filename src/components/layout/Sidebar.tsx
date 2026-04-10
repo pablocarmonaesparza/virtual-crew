@@ -4,13 +4,11 @@ import { cn } from "@/lib/utils/cn";
 import { useDashboardStore } from "@/stores/dashboard-store";
 import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import {
-  LayoutDashboard,
   Settings,
   ChevronLeft,
   ChevronRight,
-  ChevronDown,
   X,
   LogOut,
   Target,
@@ -39,8 +37,6 @@ export function Sidebar() {
   const router = useRouter();
   const isDashboard = pathname === "/dashboard";
   const isSettings = pathname.startsWith("/dashboard/settings");
-  const [dashboardExpanded, setDashboardExpanded] = useState(false);
-
   const handleLogout = async () => {
     const supabase = createClient();
     await supabase.auth.signOut();
@@ -100,68 +96,35 @@ export function Sidebar() {
         </div>
 
         {/* Navigation */}
-        <nav className="flex-1 px-2 py-4 space-y-1 overflow-y-auto">
-          {/* Dashboard header — click to collapse/expand */}
-          <button
-            onClick={() => {
-              if (!isDashboard) router.push("/dashboard");
-              if (isSidebarOpen) setDashboardExpanded(!dashboardExpanded);
-            }}
-            className={cn(
-              "flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-colors",
-              isDashboard
-                ? "text-foreground"
-                : "text-muted-foreground hover:bg-muted hover:text-foreground",
-              !isSidebarOpen && "lg:justify-center lg:px-0"
-            )}
-            title={!isSidebarOpen ? "Dashboard" : undefined}
-          >
-            <LayoutDashboard className="h-4 w-4 shrink-0" />
-            <span className={cn("truncate flex-1 text-left", !isSidebarOpen && "lg:hidden")}>
-              Dashboard
-            </span>
-            <ChevronDown className={cn(
-              "h-3 w-3 shrink-0 text-muted-foreground transition-transform duration-200",
-              !dashboardExpanded && "-rotate-90",
-              !isSidebarOpen && "lg:hidden"
-            )} />
-          </button>
-
-          {/* Dashboard sub-items — collapsible */}
-          <div className={cn(
-            "space-y-0.5 overflow-hidden transition-all duration-200",
-            isSidebarOpen ? "pl-3" : "lg:pl-0",
-            dashboardExpanded ? "max-h-96 opacity-100" : "max-h-0 opacity-0"
-          )}>
-            {DASHBOARD_TABS.map(({ value, label, icon: Icon }) => {
-              const isActive = isDashboard && activeTab === value;
-              return (
-                <button
-                  key={value}
-                  onClick={() => {
-                    setActiveTab(value);
-                    if (!isDashboard) router.push("/dashboard");
-                    // Close mobile sidebar
-                    const mq = window.matchMedia("(max-width: 1023px)");
-                    if (mq.matches) setSidebarOpen(false);
-                  }}
-                  className={cn(
-                    "flex w-full items-center gap-2 rounded-md px-3 py-2 text-[13px] font-medium transition-colors",
-                    isActive
-                      ? "bg-primary/10 text-primary dark:bg-primary/15 dark:text-primary"
-                      : "text-muted-foreground hover:bg-muted hover:text-foreground",
-                    !isSidebarOpen && "lg:justify-center lg:px-0"
-                  )}
-                  title={!isSidebarOpen ? label : undefined}
-                >
-                  <Icon className="h-3.5 w-3.5 shrink-0" />
-                  <span className={cn("truncate", !isSidebarOpen && "lg:hidden")}>
-                    {label}
-                  </span>
-                </button>
-              );
-            })}
-          </div>
+        <nav className="flex-1 px-2 py-4 space-y-0.5 overflow-y-auto">
+          {/* Dashboard tabs — flat list, no dropdown */}
+          {DASHBOARD_TABS.map(({ value, label, icon: Icon }) => {
+            const isActive = isDashboard && activeTab === value;
+            return (
+              <button
+                key={value}
+                onClick={() => {
+                  setActiveTab(value);
+                  if (!isDashboard) router.push("/dashboard");
+                  const mq = window.matchMedia("(max-width: 1023px)");
+                  if (mq.matches) setSidebarOpen(false);
+                }}
+                className={cn(
+                  "flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-colors",
+                  isActive
+                    ? "bg-primary/10 text-primary dark:bg-primary/15 dark:text-primary"
+                    : "text-muted-foreground hover:bg-muted hover:text-foreground",
+                  !isSidebarOpen && "lg:justify-center lg:px-0"
+                )}
+                title={!isSidebarOpen ? label : undefined}
+              >
+                <Icon className="h-4 w-4 shrink-0" />
+                <span className={cn("truncate", !isSidebarOpen && "lg:hidden")}>
+                  {label}
+                </span>
+              </button>
+            );
+          })}
 
           {/* Settings */}
           <Link
