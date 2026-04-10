@@ -66,7 +66,7 @@ export const useDashboardStore = create<DashboardState>((set) => ({
   setIsRunning: (running) => set({ isRunning: running }),
   activeTab: "forecast",
   setActiveTab: (tab) => set({ activeTab: tab }),
-  isSidebarOpen: false,
+  isSidebarOpen: true,
   toggleSidebar: () => set((state) => ({ isSidebarOpen: !state.isSidebarOpen })),
   setSidebarOpen: (open) => set({ isSidebarOpen: open }),
   theme:

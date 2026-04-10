@@ -7,8 +7,6 @@ import Link from "next/link";
 import { useEffect } from "react";
 import {
   Settings,
-  ChevronLeft,
-  ChevronRight,
   X,
   LogOut,
   Target,
@@ -32,7 +30,7 @@ const DASHBOARD_TABS = [
 ] as const;
 
 export function Sidebar() {
-  const { isSidebarOpen, toggleSidebar, setSidebarOpen, activeTab, setActiveTab } = useDashboardStore();
+  const { isSidebarOpen, setSidebarOpen, activeTab, setActiveTab } = useDashboardStore();
   const pathname = usePathname();
   const router = useRouter();
   const isDashboard = pathname === "/dashboard";
@@ -162,20 +160,6 @@ export function Sidebar() {
           </button>
         </div>
 
-        {/* Desktop collapse toggle */}
-        <div className="hidden lg:block border-t border-border/30 p-2">
-          <button
-            onClick={toggleSidebar}
-            className="flex w-full items-center justify-center rounded-md p-2 text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
-            aria-label={isSidebarOpen ? "Collapse sidebar" : "Expand sidebar"}
-          >
-            {isSidebarOpen ? (
-              <ChevronLeft className="h-4 w-4" />
-            ) : (
-              <ChevronRight className="h-4 w-4" />
-            )}
-          </button>
-        </div>
       </aside>
     </>
   );
