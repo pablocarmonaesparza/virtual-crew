@@ -37,3 +37,4 @@ next-env.d.ts
 
 # shopify token
 .shopify-token.json
+.gstack/

@@ -4,12 +4,13 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { EmptyState } from "@/components/layout/EmptyState";
 import { useDashboardStore } from "@/stores/dashboard-store";
-import { FileDown, BookOpen } from "lucide-react";
+import { FileDown, BookOpen, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { exportToCSV } from "@/lib/utils/csv";
+import { exportToPDF } from "@/lib/utils/pdf";
 import { useToast } from "@/components/ui/toast";
-import type { ProductBibleEntry } from "@/types";
-import { useEffect, useState } from "react";
+import type { ProductBibleEntry, Channel } from "@/types";
+import { useEffect, useState, useCallback, useRef } from "react";
 
 const CHANNEL_LABELS: Record<string, string> = {
   shopify: "B2C",
@@ -18,11 +19,15 @@ const CHANNEL_LABELS: Record<string, string> = {
   export: "Export",
 };
 
+const TIER_OPTIONS = ["premium", "core", "value"] as const;
+const CHANNEL_OPTIONS: Channel[] = ["shopify", "amazon", "wholesale", "export"];
+
 export function ProductBibleTable() {
   const { shopifyConnected, filters } = useDashboardStore();
   const { toast } = useToast();
   const [products, setProducts] = useState<ProductBibleEntry[]>([]);
   const [loading, setLoading] = useState(true);
+  const tableRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     async function load() {
@@ -44,9 +49,9 @@ export function ProductBibleTable() {
               flavour: p.product_type || "original",
               product_title: p.title || "",
               category: "drinks" as const,
-              channels: ["shopify"] as ProductBibleEntry["channels"],
-              amazon_parent_asin: undefined,
-              amazon_child_asin: undefined,
+              channels: ["shopify"] as Channel[],
+              amazon_parent_asin: "",
+              amazon_child_asin: "",
               is_active: p.status === "active",
             })
           );
@@ -61,6 +66,28 @@ export function ProductBibleTable() {
     load();
   }, [shopifyConnected]);
 
+  const updateProduct = useCallback((idx: number, field: keyof ProductBibleEntry, value: unknown) => {
+    setProducts((prev) => {
+      const next = [...prev];
+      next[idx] = { ...next[idx], [field]: value };
+      return next;
+    });
+  }, []);
+
+  const toggleChannel = useCallback((idx: number, ch: Channel) => {
+    setProducts((prev) => {
+      const next = [...prev];
+      const p = { ...next[idx] };
+      const channels = [...p.channels];
+      const i = channels.indexOf(ch);
+      if (i >= 0) channels.splice(i, 1);
+      else channels.push(ch);
+      p.channels = channels as Channel[];
+      next[idx] = p;
+      return next;
+    });
+  }, []);
+
   if (!shopifyConnected && !loading) {
     return <EmptyState integration="Shopify" metric="product bible data" />;
   }
@@ -73,7 +100,7 @@ export function ProductBibleTable() {
     return true;
   });
 
-  const handleExport = () => {
+  const handleExportCSV = () => {
     exportToCSV(
       filtered.map((p) => ({
         SKU: p.sku_id,
@@ -92,6 +119,13 @@ export function ProductBibleTable() {
     toast("Product Bible exported to CSV", "success");
   };
 
+  const handleExportPDF = async () => {
+    if (tableRef.current) {
+      await exportToPDF(tableRef.current, "product-bible");
+      toast("Product Bible exported to PDF", "success");
+    }
+  };
+
   return (
     <Card>
       <CardHeader className="flex flex-row items-center justify-between pb-3">
@@ -102,9 +136,14 @@ export function ProductBibleTable() {
             {filtered.length} SKUs
           </Badge>
         </div>
-        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={handleExport}>
-          <FileDown className="h-3.5 w-3.5" />
-        </Button>
+        <div className="flex gap-1">
+          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={handleExportCSV} title="Export CSV">
+            <FileDown className="h-3.5 w-3.5" />
+          </Button>
+          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={handleExportPDF} title="Export PDF">
+            <FileText className="h-3.5 w-3.5" />
+          </Button>
+        </div>
       </CardHeader>
       <CardContent className="p-0">
         {loading ? (
@@ -112,64 +151,100 @@ export function ProductBibleTable() {
             <div className="h-5 w-5 animate-spin rounded-full border-2 border-primary border-t-transparent" />
           </div>
         ) : (
-          <div className="overflow-x-auto">
+          <div className="overflow-x-auto" ref={tableRef}>
             <table className="w-full text-xs">
               <thead>
                 <tr className="border-b border-border/30 bg-muted/30">
-                  <th className="text-left px-4 py-2.5 font-medium text-muted-foreground">SKU</th>
-                  <th className="text-left px-4 py-2.5 font-medium text-muted-foreground">Title</th>
-                  <th className="text-left px-4 py-2.5 font-medium text-muted-foreground">Tier</th>
-                  <th className="text-left px-4 py-2.5 font-medium text-muted-foreground">Pack</th>
-                  <th className="text-left px-4 py-2.5 font-medium text-muted-foreground">Flavour</th>
-                  <th className="text-left px-4 py-2.5 font-medium text-muted-foreground">Category</th>
-                  <th className="text-left px-4 py-2.5 font-medium text-muted-foreground">Channels</th>
-                  <th className="text-left px-4 py-2.5 font-medium text-muted-foreground">Parent ASIN</th>
-                  <th className="text-left px-4 py-2.5 font-medium text-muted-foreground">Child ASIN</th>
-                  <th className="text-center px-4 py-2.5 font-medium text-muted-foreground">Status</th>
+                  <th className="text-left px-3 py-2.5 font-medium text-muted-foreground">SKU</th>
+                  <th className="text-left px-3 py-2.5 font-medium text-muted-foreground">Title</th>
+                  <th className="text-left px-3 py-2.5 font-medium text-muted-foreground">Tier</th>
+                  <th className="text-center px-3 py-2.5 font-medium text-muted-foreground">Pack</th>
+                  <th className="text-left px-3 py-2.5 font-medium text-muted-foreground">Flavour</th>
+                  <th className="text-left px-3 py-2.5 font-medium text-muted-foreground">Channels</th>
+                  <th className="text-left px-3 py-2.5 font-medium text-muted-foreground">Parent ASIN</th>
+                  <th className="text-left px-3 py-2.5 font-medium text-muted-foreground">Child ASIN</th>
                 </tr>
               </thead>
               <tbody>
                 {filtered.length === 0 ? (
                   <tr>
-                    <td colSpan={10} className="text-center py-8 text-muted-foreground">
+                    <td colSpan={8} className="text-center py-8 text-muted-foreground">
                       No products match the current filters
                     </td>
                   </tr>
                 ) : (
-                  filtered.map((p) => (
-                    <tr key={p.sku_id} className="border-b border-border/20 hover:bg-muted/20 transition-colors">
-                      <td className="px-4 py-2.5 font-mono">{p.sku_id}</td>
-                      <td className="px-4 py-2.5 font-medium">{p.sku_title}</td>
-                      <td className="px-4 py-2.5">
-                        <Badge variant={p.tier === "premium" ? "default" : "secondary"} className="text-[10px]">
-                          {p.tier}
-                        </Badge>
-                      </td>
-                      <td className="px-4 py-2.5">{p.pack_size}</td>
-                      <td className="px-4 py-2.5 capitalize">{p.flavour}</td>
-                      <td className="px-4 py-2.5 capitalize">{p.category.replace("_", " ")}</td>
-                      <td className="px-4 py-2.5">
-                        <div className="flex gap-1 flex-wrap">
-                          {p.channels.map((c) => (
-                            <Badge key={c} variant="outline" className="text-[9px] px-1.5">
-                              {CHANNEL_LABELS[c] || c}
-                            </Badge>
-                          ))}
-                        </div>
-                      </td>
-                      <td className="px-4 py-2.5 font-mono text-muted-foreground">
-                        {p.amazon_parent_asin || "—"}
-                      </td>
-                      <td className="px-4 py-2.5 font-mono text-muted-foreground">
-                        {p.amazon_child_asin || "—"}
-                      </td>
-                      <td className="px-4 py-2.5 text-center">
-                        <Badge variant={p.is_active ? "positive" : "secondary"} className="text-[10px]">
-                          {p.is_active ? "Active" : "Inactive"}
-                        </Badge>
-                      </td>
-                    </tr>
-                  ))
+                  filtered.map((p) => {
+                    const idx = products.indexOf(p);
+                    return (
+                      <tr key={p.sku_id} className="border-b border-border/20 hover:bg-muted/20 transition-colors">
+                        <td className="px-3 py-1.5 font-mono text-muted-foreground">{p.sku_id}</td>
+                        <td className="px-3 py-1.5 font-medium max-w-[160px] truncate">{p.sku_title}</td>
+                        <td className="px-3 py-1.5">
+                          <select
+                            value={p.tier}
+                            onChange={(e) => updateProduct(idx, "tier", e.target.value)}
+                            className="bg-background border border-border/40 rounded px-1.5 py-1 text-xs focus:outline-none focus:ring-2 focus:ring-primary/30"
+                          >
+                            {TIER_OPTIONS.map((t) => (
+                              <option key={t} value={t}>{t.charAt(0).toUpperCase() + t.slice(1)}</option>
+                            ))}
+                          </select>
+                        </td>
+                        <td className="px-3 py-1.5 text-center">
+                          <input
+                            type="number"
+                            min={1}
+                            value={p.pack_size}
+                            onChange={(e) => updateProduct(idx, "pack_size", parseInt(e.target.value) || 1)}
+                            className="w-14 text-center font-mono text-xs rounded border border-border/40 bg-background px-1 py-1 focus:outline-none focus:ring-2 focus:ring-primary/30"
+                          />
+                        </td>
+                        <td className="px-3 py-1.5">
+                          <input
+                            type="text"
+                            value={p.flavour}
+                            onChange={(e) => updateProduct(idx, "flavour", e.target.value)}
+                            className="w-24 text-xs rounded border border-border/40 bg-background px-2 py-1 focus:outline-none focus:ring-2 focus:ring-primary/30"
+                          />
+                        </td>
+                        <td className="px-3 py-1.5">
+                          <div className="flex gap-1 flex-wrap">
+                            {CHANNEL_OPTIONS.map((ch) => (
+                              <button
+                                key={ch}
+                                onClick={() => toggleChannel(idx, ch)}
+                                className={`text-[9px] px-1.5 py-0.5 rounded border transition-colors ${
+                                  p.channels.includes(ch)
+                                    ? "bg-primary/15 border-primary/30 text-primary"
+                                    : "bg-transparent border-border/30 text-muted-foreground/50 hover:border-border/60"
+                                }`}
+                              >
+                                {CHANNEL_LABELS[ch]}
+                              </button>
+                            ))}
+                          </div>
+                        </td>
+                        <td className="px-3 py-1.5">
+                          <input
+                            type="text"
+                            value={p.amazon_parent_asin || ""}
+                            placeholder="B0..."
+                            onChange={(e) => updateProduct(idx, "amazon_parent_asin", e.target.value)}
+                            className="w-24 font-mono text-xs rounded border border-border/40 bg-background px-2 py-1 focus:outline-none focus:ring-2 focus:ring-primary/30 placeholder:text-muted-foreground/30"
+                          />
+                        </td>
+                        <td className="px-3 py-1.5">
+                          <input
+                            type="text"
+                            value={p.amazon_child_asin || ""}
+                            placeholder="B0..."
+                            onChange={(e) => updateProduct(idx, "amazon_child_asin", e.target.value)}
+                            className="w-24 font-mono text-xs rounded border border-border/40 bg-background px-2 py-1 focus:outline-none focus:ring-2 focus:ring-primary/30 placeholder:text-muted-foreground/30"
+                          />
+                        </td>
+                      </tr>
+                    );
+                  })
                 )}
               </tbody>
             </table>

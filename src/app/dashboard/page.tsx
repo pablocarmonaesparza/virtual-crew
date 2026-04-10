@@ -18,6 +18,7 @@ import { NewVsRepeatChart } from "@/components/charts/NewVsRepeatChart";
 import { RecommendationsPanel } from "@/components/recommendations/RecommendationsPanel";
 import { ProductBibleTable } from "@/components/tables/ProductBibleTable";
 import { BudgetPlanningTable } from "@/components/tables/BudgetPlanningTable";
+import { AmbitiousForecastInput } from "@/components/forecast/AmbitiousForecastInput";
 import { DataSourceIndicator } from "@/components/layout/DataSourceIndicator";
 import { SetupBanner } from "@/components/onboarding/SetupBanner";
 import { useDashboardStore } from "@/stores/dashboard-store";
@@ -75,6 +76,7 @@ export default function DashboardPage() {
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsContent value="forecast" className="space-y-6">
+          <AmbitiousForecastInput />
           <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
             <ForecastChart />
             <ForecastTable />
