@@ -4,6 +4,8 @@
 
 A comprehensive dashboard for Agua de Madre (ADM) that provides real-time sales forecasting, ad spend tracking, customer acquisition analysis, and AI-powered recommendations.
 
+> **Full technical documentation:** [DOCUMENTATION.md](./DOCUMENTATION.md)
+
 ## Tech Stack
 
 | Layer | Technology |
