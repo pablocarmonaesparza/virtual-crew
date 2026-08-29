@@ -161,16 +161,24 @@ export function ChatPanel() {
 
   return (
     <Card className="fixed bottom-4 right-4 z-50 w-[400px] max-h-[600px] shadow-2xl flex flex-col">
-      <CardHeader className="flex flex-row items-center justify-between p-4 pb-2 border-b border-border/30">
-        <div className="flex items-center gap-2">
-          <div className="flex h-7 w-7 items-center justify-center rounded-full bg-primary">
-            <Bot className="h-4 w-4 text-primary-foreground" />
+      <CardHeader className="flex flex-col gap-0 p-4 pb-2 border-b border-border/30">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <div className="flex h-7 w-7 items-center justify-center rounded-full bg-primary">
+              <Bot className="h-4 w-4 text-primary-foreground" />
+            </div>
+            <div>
+              <CardTitle className="text-sm">S&OP Assistant</CardTitle>
+              <p className="text-[10px] text-muted-foreground">powered by Claude</p>
+            </div>
           </div>
-          <CardTitle className="text-sm">S&OP Assistant</CardTitle>
+          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={toggleChat}>
+            <X className="h-4 w-4" />
+          </Button>
         </div>
-        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={toggleChat}>
-          <X className="h-4 w-4" />
-        </Button>
+        <p className="text-[10px] text-amber-500/80 mt-1">
+          Each message uses API tokens. Use concise questions for best results.
+        </p>
       </CardHeader>
       <CardContent className="flex-1 p-0 flex flex-col min-h-0">
         <div ref={scrollRef} className="flex-1 overflow-y-auto p-4 space-y-4 max-h-[420px]">

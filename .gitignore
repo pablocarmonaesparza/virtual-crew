@@ -37,3 +37,6 @@ next-env.d.ts
 
 # shopify token
 .shopify-token.json
+SHOPIFY_INSTALL_LINK.md
+SHOPIFY_MERCHANT_SETUP.md
+.gstack/

@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { useDashboardStore } from "@/stores/dashboard-store";
 import { Play, MessageCircle, RefreshCw, PanelLeft } from "lucide-react";
 import { useToast } from "@/components/ui/toast";
+import { PageTitle } from "./PageTitle";
 
 export function Header() {
   const { isRunning, setIsRunning, toggleChat, isChatOpen, setSidebarOpen, setLatestRecommendation, setActiveTab, setRunAnalysisResult } =
@@ -68,9 +69,7 @@ export function Header() {
             <h1 className="text-base font-semibold font-heading text-foreground">
               S&OP Dashboard
             </h1>
-            <p className="text-[11px] text-muted-foreground leading-none">
-              Agua de Madre
-            </p>
+            <PageTitle />
           </div>
         </div>
 
